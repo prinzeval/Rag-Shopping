@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Interface</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="chat-container">
+        <h1>Chat Zone</h1>
+        <div id="chat-box">
+            <!-- Chat messages will appear here -->
+        </div>
+        <div class="input-area">
+            <input type="text" id="message-input" placeholder="Type your message...">
+            <button id="send-button">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // WebSocket or Fetch API can be used here for real-time chat
+        const chatBox = document.getElementById("chat-box");
+        const messageInput = document.getElementById("message-input");
+        const sendButton = document.getElementById("send-button");
+
+        sendButton.addEventListener("click", () => {
+            const message = messageInput.value;
+            if (message) {
+                // Add the message to the chat box
+                const messageElement = document.createElement("div");
+                messageElement.className = "message";
+                messageElement.textContent = `You: ${message}`;
+                chatBox.appendChild(messageElement);
+
+                // Clear the input
+                messageInput.value = "";
+
+                // Send the message to the backend (optional)
+                fetch("/send-message", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ message })
+                });
+            }
+        });
+    </script>
+</body>
+</html>

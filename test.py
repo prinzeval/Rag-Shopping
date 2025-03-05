@@ -62,30 +62,92 @@
 
 
 
-import requests
 
-# Credentials
-ACCESS_TOKEN = "EAAk2WSNlS4oBOwyZAxZCQtSenlx2JaoXT7ZB2mjTCfhZCFxTUVZC2ZAUISUkEqEhg2zZAuavlWVl5S1iJxuZCLrBVvZCZARaEVu31oiZAYqysUWxz1LqkqPXgdqeIZBYVAVZCKrCxZB92bHMoUqB2k3slEXBCNcZBkXPHq9b4T3jaAXlyLvMrxq5Vk2EZCxoRg7NsqGAQqrWhsKTHTJZBVLH3Y1VnTj2Am2ocMAXJJ42yuVwZD"
-BUSINESS_ID = "1887710258302426"
-BASE_URL = "https://graph.facebook.com/v19.0"
 
-# Function to create a product catalog
-def create_product_catalog(name="My Catalog", vertical="commerce"):
-    endpoint = f"{BUSINESS_ID}/owned_product_catalogs"
-    data = {
-        "name": name,
-        "vertical": vertical,
-        "access_token": ACCESS_TOKEN,
-    }
 
-    response = requests.post(f"{BASE_URL}/{endpoint}", json=data)
-    if response.status_code == 200:
-        catalog_id = response.json().get("id")
-        print(f"✅ Created Product Catalog: {catalog_id}")
-        return catalog_id
-    else:
-        print(f"❌ Error Creating Product Catalog: {response.text}")
-        return None
 
-# Example Usage
-catalog_id = create_product_catalog()
+
+
+# import requests
+
+# # Credentials
+# ACCESS_TOKEN = "EAAk2WSNlS4oBOwyZAxZCQtSenlx2JaoXT7ZB2mjTCfhZCFxTUVZC2ZAUISUkEqEhg2zZAuavlWVl5S1iJxuZCLrBVvZCZARaEVu31oiZAYqysUWxz1LqkqPXgdqeIZBYVAVZCKrCxZB92bHMoUqB2k3slEXBCNcZBkXPHq9b4T3jaAXlyLvMrxq5Vk2EZCxoRg7NsqGAQqrWhsKTHTJZBVLH3Y1VnTj2Am2ocMAXJJ42yuVwZD"
+# BUSINESS_ID = "1887710258302426"
+# BASE_URL = "https://graph.facebook.com/v19.0"
+
+# # Function to create a product catalog
+# def create_product_catalog(name="My Catalog", vertical="commerce"):
+#     endpoint = f"{BUSINESS_ID}/owned_product_catalogs"
+#     data = {
+#         "name": name,
+#         "vertical": vertical,
+#         "access_token": ACCESS_TOKEN,
+#     }
+
+#     response = requests.post(f"{BASE_URL}/{endpoint}", json=data)
+#     if response.status_code == 200:
+#         catalog_id = response.json().get("id")
+#         print(f"✅ Created Product Catalog: {catalog_id}")
+#         return catalog_id
+#     else:
+#         print(f"❌ Error Creating Product Catalog: {response.text}")
+#         return None
+
+# # Example Usage
+# catalog_id = create_product_catalog()
+
+
+
+
+
+
+
+
+# from fastapi import FastAPI, Request
+# import requests
+# import json
+
+# app = FastAPI()
+
+# # Your credentials
+# ACCESS_TOKEN = "EAAk2WSNlS4oBOxWIZCVBrRgH3y3vgjo7ZAswkpzboCzZAx5ggoZASgjzZAGZAZBtOoxukBaWCiX7e3sQf5xP9hQbBcQoMhgkY25xWH9ZBnT9HfVZBhKz62smVb0OEmUZBrzxaracr6qzPJlPZAYq7Nhd6L07TCnSNGAQLFUWsoU5g0cffRzvFiNO700EcZCyJxCKwZAzKTR2xfAVYRwnp1bdDIb8aZBRDbGCFfmZCMweYAZD"  # Replace with your actual access token
+# PHONE_NUMBER_ID = "594079853780037"  # Replace with your WhatsApp phone number ID
+
+# @app.post("/webhook")
+# async def receive_whatsapp_message(request: Request):
+#     data = await request.json()
+#     print(f"📩 Incoming Message: {data}")  # Log incoming message
+
+#     # Extract the message details
+#     if "entry" in data:
+#         for entry in data["entry"]:
+#             for change in entry.get("changes", []):
+#                 if "value" in change and "messages" in change["value"]:
+#                     for message in change["value"]["messages"]:
+#                         sender_number = message["from"]  # Sender's WhatsApp number
+#                         message_text = message["text"]["body"]  # Message content
+
+#                         print(f"Received '{message_text}' from {sender_number}")
+
+#                         # Send an auto-reply
+#                         send_whatsapp_message(sender_number, "Hi! 👋")
+
+#     return {"status": "Message processed"}
+
+# # Function to send a WhatsApp reply
+# def send_whatsapp_message(to, text):
+#     url = f"https://graph.facebook.com/v19.0/{PHONE_NUMBER_ID}/messages"
+#     headers = {
+#         "Content-Type": "application/json",
+#         "Authorization": f"Bearer {ACCESS_TOKEN}"
+#     }
+#     payload = {
+#         "messaging_product": "whatsapp",
+#         "to": to,
+#         "type": "text",
+#         "text": {"body": text}
+#     }
+
+#     response = requests.post(url, headers=headers, json=payload)
+#     print(f"📤 Reply Sent: {response.json()}")
+
