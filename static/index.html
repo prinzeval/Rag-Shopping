@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp CRM Chat UI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .chat-container {
+            width: 350px;
+            height: 600px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-header {
+            background-color: #075e54;
+            color: #ffffff;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .customer-info {
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .chat-messages {
+            flex-grow: 1;
+            padding: 10px;
+            overflow-y: auto;
+            background-image: url('https://i.pinimg.com/736x/2f/5f/9a/2f5f9a16d7a5170a4690185f5e15e679.jpg');
+            background-repeat: repeat;
+        }
+        .message {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        .message.customer {
+            justify-content: flex-start;
+        }
+        .message.agent {
+            justify-content: flex-end;
+        }
+        .message .bubble {
+            max-width: 70%;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        .message.customer .bubble {
+            background-color: #ffffff;
+        }
+        .message.agent .bubble {
+            background-color: #dcf8c6;
+        }
+        .message .time {
+            font-size: 11px;
+            color: #999;
+            margin-top: 4px;
+            text-align: right;
+        }
+        .chat-input {
+            display: flex;
+            border-top: 1px solid #e6e6e6;
+            padding: 10px;
+            background-color: #ffffff;
+        }
+        .chat-input input {
+            flex-grow: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.1);
+        }
+        .chat-input button {
+            background-color: #075e54;
+            color: #ffffff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-left: 5px;
+            cursor: pointer;
+            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+        }
+        .chat-input button:hover {
+            background-color: #064e44;
+        }
+        .customer-list {
+            position: absolute;
+            top: 10px;
+            left: 370px;
+            width: 200px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+        }
+        .customer-list h3 {
+            margin-top: 0;
+            color: #075e54;
+        }
+        .customer-item {
+            padding: 8px;
+            border-bottom: 1px solid #e6e6e6;
+            cursor: pointer;
+        }
+        .customer-item:last-child {
+            border-bottom: none;
+        }
+        .customer-item:hover {
+            background-color: #f0f0f0;
+        }
+        .customer-item.active {
+            background-color: #e7f7e7;
+        }
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            background-color: #25d366;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+    </style>
+
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <div>
+                <div>WhatsApp CRM Chat</div>
+                <div class="customer-info">
+                    <span class="status-indicator" id="status-indicator"></span>
+                    <span id="current-customer">No chat selected</span>
+                </div>
+            </div>
+        </div>
+        <div id="chat-messages" class="chat-messages">
+            <div class="no-chat-selected">
+                <img src="data:image/svg+xml;base64,..." alt="WhatsApp Icon">
+                <p>Select a conversation to start chatting</p>
+            </div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="message-input" placeholder="Type your message..." disabled>
+            <button id="send-button" disabled>Send</button>
+        </div>
+    </div>
+
+    <div class="customer-list">
+        <h3>Active Chats</h3>
+        <div id="customers">
+            <div id="no-chats" style="padding: 10px; color: #666;">No active chats</div>
+        </div>
+    </div>
+
+    <script>
+        let currentCustomer = null;
+        let unreadMessages = {}; // Track unread messages for each customer
+
+        // Fetch and display conversations
+        async function fetchConversations() {
+            const response = await fetch("/api/get-conversations");
+            const data = await response.json();
+            const customersDiv = document.getElementById("customers");
+            const noChatsDiv = document.getElementById("no-chats");
+
+            if (Object.keys(data.conversations).length > 0) {
+                if (noChatsDiv) noChatsDiv.remove();
+                customersDiv.innerHTML = "";
+
+                for (const phoneNumber in data.conversations) {
+                    const customerItem = document.createElement("div");
+                    customerItem.className = "customer-item";
+                    customerItem.dataset.number = phoneNumber;
+                    customerItem.innerHTML = `
+                        <span class="status-indicator"></span>
+                        ${phoneNumber}
+                        <div class="customer-preview">${data.conversations[phoneNumber][0]?.text || "New conversation"}</div>
+                        ${unreadMessages[phoneNumber] ? `<span class="notification-badge">${unreadMessages[phoneNumber]}</span>` : ""}
+                    `;
+                    customerItem.addEventListener("click", () => switchCustomer(phoneNumber));
+                    customersDiv.appendChild(customerItem);
+                }
+            }
+        }
+
+        // Switch to a customer conversation
+        async function switchCustomer(phoneNumber) {
+            currentCustomer = phoneNumber;
+            document.getElementById("current-customer").textContent = phoneNumber;
+            document.getElementById("message-input").disabled = false;
+            document.getElementById("send-button").disabled = false;
+
+            // Clear unread messages for this customer
+            unreadMessages[phoneNumber] = 0;
+            fetchConversations();
+
+            const response = await fetch("/api/get-conversations");
+            const data = await response.json();
+            displayConversation(data.conversations[phoneNumber]);
+        }
+
+        // Display messages for a customer
+        function displayConversation(messages) {
+            const chatMessages = document.getElementById("chat-messages");
+            chatMessages.innerHTML = "";
+
+            if (messages) {
+                for (const message of messages) {
+                    const messageDiv = document.createElement("div");
+                    messageDiv.className = `message ${message.type}`;
+                    messageDiv.innerHTML = `
+                        <div class="bubble">${message.text}<div class="time">${message.time}</div></div>
+                    `;
+                    chatMessages.appendChild(messageDiv);
+                }
+            }
+
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Send a message
+        document.getElementById("send-button").addEventListener("click", async () => {
+            const input = document.getElementById("message-input");
+            const text = input.value.trim();
+
+            if (text && currentCustomer) {
+                await fetch("/api/send-message", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ to: currentCustomer, text })
+                });
+
+                input.value = "";
+                fetchConversations(); // Refresh the conversation
+            }
+        });
+
+        // Poll for new messages every 3 seconds
+        setInterval(async () => {
+            const response = await fetch("/api/get-conversations");
+            const data = await response.json();
+
+            // Check for new messages
+            for (const phoneNumber in data.conversations) {
+                if (phoneNumber !== currentCustomer) {
+                    unreadMessages[phoneNumber] = (unreadMessages[phoneNumber] || 0) + 1;
+                }
+            }
+
+            // Update the UI
+            fetchConversations();
+
+            // If the current customer has new messages, refresh the chat
+            if (currentCustomer && data.conversations[currentCustomer]) {
+                displayConversation(data.conversations[currentCustomer]);
+            }
+        }, 3000);
+
+        // Initial fetch
+        fetchConversations();
+    </script>
+</body>
+</html>
