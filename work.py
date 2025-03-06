@@ -154,17 +154,60 @@
 
 
 
-import requests
+# import requests
 
-access_token = 'EAAk2WSNlS4oBOZCuPlmFlrcYdYZAilSnGJvuwRf3JvwJlbbTuxbQ04Nv43V9OFWZB5Y03lZAN0YDJJ25wZAjG3vMQuPCYAd43Xey06QKAi3i7nVZCTEEBvPDFMgK3qo0ZBk7Y7UElYYPjMEvVnzMM6IkxobU7udZBFciDDfc1A8ZAKWICMd7RAGViPZB3v4IENh1wrY9kceFkwZA4n21BQ1ZA7FZBJTqAFk5QmnbvD7wZD'  # Replace with your valid access token
-catalog_id = '1838394003577062'  # Replace with your catalog ID
-base_url = 'https://graph.facebook.com/v19.0'
+# access_token = 'EAAk2WSNlS4oBO2ej3Q7k4l2PeTXZBCJMCQwOvaHkKoQ5vztMxaPOsqZBeynKLSrbI45jzvlZCMGGukyZC1YqV9iMC3Jk1vKnrtfxoympYZAZCvYzH85uYNGDZCZB0OWHwtLAXvw3SZCbcqPfnZBlVtuFCw64vTNNxviBcbaWlzW5hIOpQ6mRcqQqPieIlPNFIQZAczQX7ZAn4nRv18RYfTbMdZB1upYNjaiyu4o6HW12f8g5eG9NUV3cl5uYZD'  # Replace with your valid access token
+# catalog_id = '1838394003577062'  # Replace with your catalog ID
+# base_url = 'https://graph.facebook.com/v19.0'
 
-url = f"{base_url}/{catalog_id}"
+# url = f"{base_url}/{catalog_id}"
 
-response = requests.delete(url, params={'access_token': access_token})
+# response = requests.delete(url, params={'access_token': access_token})
 
-if response.status_code == 200:
-    print(f"✅ Catalog Deleted Successfully!")
-else:
-    print(f"❌ Error Deleting Catalog: {response.text}")
+# if response.status_code == 200:
+#     print(f"✅ Catalog Deleted Successfully!")
+# else:
+#     print(f"❌ Error Deleting Catalog: {response.text}")
+
+
+
+
+# import requests
+# access_token = 'EAAk2WSNlS4oBO2Ku98f7ZCnH6ljm34IthhDa23biNzZA9fEmxqKxSDW5JMOyzwGdj8LRaFU5uA8g5vdKv8Tcq8Wz7b1JnVf2ZA1ghw3jLEyAieVP9TV4Y6ZCDn4tZAV7JiER8uB8D0VUITjK4PKxXdZAuOJx4UkYDLMkZCoG4tYwUSp4JA5P0nNZBbFwpG45XqByhpXRtr59kbZAQ8U2G7FtEI4BNWMg3s1aVPQ4ZD'
+# business_id = '1887710258302426'
+# base_url = 'https://graph.facebook.com/v19.0'
+
+# url = f"{base_url}/{business_id}/owned_product_catalogs"
+
+# response = requests.get(url, params={'access_token': access_token})
+
+# if response.status_code == 200:
+#         catalogs = response.json().get('data', [])
+#         for catalog in catalogs:
+#                 print(f"📦 Catalog ID: {catalog['id']}, Name: {catalog['name']}")
+# else:
+#         print(f"❌ Error Fetching Catalogs: {response.text}")  
+
+
+
+
+
+# import requests
+
+# access_token = 'EAAk2WSNlS4oBO3REZCGG9ykQkxgtKzWvHrRWNDQ47VgQyVH3QTOJbf2XO8KiLFYG3a793VJZAfshh3UuetJ5vr6IHi0XroYKglDIMA3kkHfUR11al0DZARLfR008uTxu56UmZCdqJu5URDoy4PXtNSCmnrRDjbB6V7ze9nUMKgvpckL9S259oPUt2piXM0BuM4TUOes8pJqLaC8ouZCZATvI83OwHiZBFFIxZACupaavpxj79LwMLyzt'
+# catalog_id = '657845773292359'
+# base_url = 'https://graph.facebook.com/v19.0'
+
+# url = f"{base_url}/{catalog_id}"
+
+# data = {
+#         'name': 'Real cart',
+#         'access_token': access_token
+# }
+
+# response = requests.post(url, json=data)
+
+# if response.status_code == 200:
+#         print(f"✅ Catalog Updated Successfully!")
+# else:
+#         print(f"❌ Error Updating Catalog: {response.text}")

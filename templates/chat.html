@@ -3,49 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Interface</title>
-    <link rel="stylesheet" href="/static/styles.css">
+    <title>WhatsApp CRM Chat UI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .chat-container {
+            width: 350px;
+            height: 600px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-header {
+            background-color: #075e54;
+            color: #ffffff;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .chat-messages {
+            flex-grow: 1;
+            padding: 10px;
+            overflow-y: auto;
+        }
+        .message {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        .message.customer {
+            justify-content: flex-start;
+        }
+        .message.agent {
+            justify-content: flex-end;
+        }
+        .message .bubble {
+            max-width: 70%;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+        }
+        .message.customer .bubble {
+            background-color: #e6e6e6;
+        }
+        .message.agent .bubble {
+            background-color: #dcf8c6;
+        }
+        .chat-input {
+            display: flex;
+            border-top: 1px solid #e6e6e6;
+            padding: 10px;
+            background-color: #ffffff;
+        }
+        .chat-input input {
+            flex-grow: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.1);
+        }
+        .chat-input button {
+            background-color: #075e54;
+            color: #ffffff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-left: 5px;
+            cursor: pointer;
+            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+        }
+        .chat-input button:hover {
+            background-color: #064e44;
+        }
+    </style>
 </head>
 <body>
     <div class="chat-container">
-        <h1>Chat Zone</h1>
-        <div id="chat-box">
-            <!-- Chat messages will appear here -->
+        <div class="chat-header">WhatsApp CRM Chat</div>
+        <div class="chat-messages">
+            <div class="message customer">
+                <div class="bubble">Hello, I have a question about my order.</div>
+            </div>
+            <div class="message agent">
+                <div class="bubble">Sure, I'd be happy to help! What seems to be the problem?</div>
+            </div>
         </div>
-        <div class="input-area">
-            <input type="text" id="message-input" placeholder="Type your message...">
-            <button id="send-button">Send</button>
+        <div class="chat-input">
+            <input type="text" placeholder="Type your message...">
+            <button>Send</button>
         </div>
     </div>
-
-    <script>
-        // WebSocket or Fetch API can be used here for real-time chat
-        const chatBox = document.getElementById("chat-box");
-        const messageInput = document.getElementById("message-input");
-        const sendButton = document.getElementById("send-button");
-
-        sendButton.addEventListener("click", () => {
-            const message = messageInput.value;
-            if (message) {
-                // Add the message to the chat box
-                const messageElement = document.createElement("div");
-                messageElement.className = "message";
-                messageElement.textContent = `You: ${message}`;
-                chatBox.appendChild(messageElement);
-
-                // Clear the input
-                messageInput.value = "";
-
-                // Send the message to the backend (optional)
-                fetch("/send-message", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ message })
-                });
-            }
-        });
-    </script>
 </body>
 </html>
