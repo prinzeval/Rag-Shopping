@@ -136,8 +136,44 @@
             display: inline-block;
             margin-right: 5px;
         }
+        .notification-badge {
+            background-color: #ff3b30;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 10px;
+            margin-left: 5px;
+        }
+        .no-chat-selected {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            color: #666;
+        }
+        .connection-status {
+            position: fixed;
+            top: 5px;
+            right: 5px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+        .connection-status.connected {
+            background-color: #25d366;
+            color: white;
+        }
+        .connection-status.disconnected {
+            background-color: #ff3b30;
+            color: white;
+        }
+        .connection-status.connecting {
+            background-color: #ffcc00;
+            color: black;
+        }
     </style>
-
 </head>
 <body>
     <div class="chat-container">
@@ -152,7 +188,6 @@
         </div>
         <div id="chat-messages" class="chat-messages">
             <div class="no-chat-selected">
-                <img src="data:image/svg+xml;base64,..." alt="WhatsApp Icon">
                 <p>Select a conversation to start chatting</p>
             </div>
         </div>
@@ -169,39 +204,120 @@
         </div>
     </div>
 
+    <div id="connection-status" class="connection-status connecting">
+        Connecting...
+    </div>
+
     <script>
         let currentCustomer = null;
         let unreadMessages = {}; // Track unread messages for each customer
+        let socket = null;
 
-        // Fetch and display conversations
-        async function fetchConversations() {
-            const response = await fetch("/api/get-conversations");
-            const data = await response.json();
+        // Initialize WebSocket connection
+        function connectWebSocket() {
+            // Determine correct WebSocket URL (handle both HTTP and HTTPS)
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws`;
+            
+            // Update connection status
+            document.getElementById('connection-status').className = 'connection-status connecting';
+            document.getElementById('connection-status').textContent = 'Connecting...';
+            
+            // Create WebSocket
+            socket = new WebSocket(wsUrl);
+            
+            // WebSocket event handlers
+            socket.onopen = function(e) {
+                console.log('WebSocket connection established');
+                document.getElementById('connection-status').className = 'connection-status connected';
+                document.getElementById('connection-status').textContent = 'Connected';
+                
+                // Hide status indicator after 3 seconds
+                setTimeout(() => {
+                    document.getElementById('connection-status').style.opacity = '0';
+                }, 3000);
+            };
+            
+            socket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                console.log('Message from server:', data);
+                
+                if (data.type === 'initial_data' || data.type === 'new_message') {
+                    updateConversations(data.conversations);
+                    
+                    // If current customer conversation is updated, refresh the chat
+                    if (currentCustomer && data.conversations[currentCustomer]) {
+                        displayConversation(data.conversations[currentCustomer]);
+                    }
+                    
+                    // Handle unread messages
+                    if (data.type === 'new_message' && data.sender !== currentCustomer) {
+                        unreadMessages[data.sender] = (unreadMessages[data.sender] || 0) + 1;
+                        updateCustomerList(data.conversations);
+                    }
+                }
+            };
+            
+            socket.onclose = function(event) {
+                console.log('WebSocket connection closed. Attempting to reconnect...');
+                document.getElementById('connection-status').className = 'connection-status disconnected';
+                document.getElementById('connection-status').textContent = 'Disconnected. Reconnecting...';
+                document.getElementById('connection-status').style.opacity = '1';
+                
+                // Try to reconnect after 3 seconds
+                setTimeout(connectWebSocket, 3000);
+            };
+            
+            socket.onerror = function(error) {
+                console.error('WebSocket error:', error);
+                document.getElementById('connection-status').className = 'connection-status disconnected';
+                document.getElementById('connection-status').textContent = 'Connection error';
+            };
+        }
+
+        // Update customer list in UI
+        function updateCustomerList(conversations) {
             const customersDiv = document.getElementById("customers");
             const noChatsDiv = document.getElementById("no-chats");
-
-            if (Object.keys(data.conversations).length > 0) {
+            
+            if (Object.keys(conversations).length > 0) {
                 if (noChatsDiv) noChatsDiv.remove();
                 customersDiv.innerHTML = "";
-
-                for (const phoneNumber in data.conversations) {
+                
+                for (const phoneNumber in conversations) {
                     const customerItem = document.createElement("div");
                     customerItem.className = "customer-item";
+                    if (phoneNumber === currentCustomer) {
+                        customerItem.className += " active";
+                    }
                     customerItem.dataset.number = phoneNumber;
+                    
+                    // Get last message for preview
+                    const messages = conversations[phoneNumber];
+                    const lastMessage = messages[messages.length - 1];
+                    const preview = lastMessage?.text || "New conversation";
+                    
                     customerItem.innerHTML = `
                         <span class="status-indicator"></span>
                         ${phoneNumber}
-                        <div class="customer-preview">${data.conversations[phoneNumber][0]?.text || "New conversation"}</div>
+                        <div class="customer-preview">${preview.length > 20 ? preview.substring(0, 20) + '...' : preview}</div>
                         ${unreadMessages[phoneNumber] ? `<span class="notification-badge">${unreadMessages[phoneNumber]}</span>` : ""}
                     `;
                     customerItem.addEventListener("click", () => switchCustomer(phoneNumber));
                     customersDiv.appendChild(customerItem);
                 }
+            } else {
+                customersDiv.innerHTML = '<div id="no-chats" style="padding: 10px; color: #666;">No active chats</div>';
             }
+        }
+        
+        // Update conversations with new data
+        function updateConversations(conversations) {
+            updateCustomerList(conversations);
         }
 
         // Switch to a customer conversation
-        async function switchCustomer(phoneNumber) {
+        function switchCustomer(phoneNumber) {
             currentCustomer = phoneNumber;
             document.getElementById("current-customer").textContent = phoneNumber;
             document.getElementById("message-input").disabled = false;
@@ -209,11 +325,16 @@
 
             // Clear unread messages for this customer
             unreadMessages[phoneNumber] = 0;
-            fetchConversations();
-
-            const response = await fetch("/api/get-conversations");
-            const data = await response.json();
-            displayConversation(data.conversations[phoneNumber]);
+            
+            // Fetch the current conversations (we already have them from WebSocket)
+            fetch("/api/get-conversations")
+                .then(response => response.json())
+                .then(data => {
+                    updateCustomerList(data.conversations);
+                    if (data.conversations[phoneNumber]) {
+                        displayConversation(data.conversations[phoneNumber]);
+                    }
+                });
         }
 
         // Display messages for a customer
@@ -221,7 +342,7 @@
             const chatMessages = document.getElementById("chat-messages");
             chatMessages.innerHTML = "";
 
-            if (messages) {
+            if (messages && messages.length > 0) {
                 for (const message of messages) {
                     const messageDiv = document.createElement("div");
                     messageDiv.className = `message ${message.type}`;
@@ -230,6 +351,8 @@
                     `;
                     chatMessages.appendChild(messageDiv);
                 }
+            } else {
+                chatMessages.innerHTML = '<div class="no-messages">No messages yet</div>';
             }
 
             // Scroll to bottom
@@ -237,45 +360,42 @@
         }
 
         // Send a message
-        document.getElementById("send-button").addEventListener("click", async () => {
+        async function sendMessage() {
             const input = document.getElementById("message-input");
             const text = input.value.trim();
 
             if (text && currentCustomer) {
-                await fetch("/api/send-message", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ to: currentCustomer, text })
-                });
+                try {
+                    await fetch("/api/send-message", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ to: currentCustomer, text })
+                    });
+                    input.value = "";
+                } catch (error) {
+                    console.error("Error sending message:", error);
+                    alert("Failed to send message. Please try again.");
+                }
+            }
+        }
 
-                input.value = "";
-                fetchConversations(); // Refresh the conversation
+        // Add event listeners
+        document.getElementById("send-button").addEventListener("click", sendMessage);
+        document.getElementById("message-input").addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                sendMessage();
             }
         });
 
-        // Poll for new messages every 3 seconds
-        setInterval(async () => {
-            const response = await fetch("/api/get-conversations");
-            const data = await response.json();
+        // Initial connection
+        connectWebSocket();
 
-            // Check for new messages
-            for (const phoneNumber in data.conversations) {
-                if (phoneNumber !== currentCustomer) {
-                    unreadMessages[phoneNumber] = (unreadMessages[phoneNumber] || 0) + 1;
-                }
-            }
-
-            // Update the UI
-            fetchConversations();
-
-            // If the current customer has new messages, refresh the chat
-            if (currentCustomer && data.conversations[currentCustomer]) {
-                displayConversation(data.conversations[currentCustomer]);
-            }
-        }, 3000);
-
-        // Initial fetch
-        fetchConversations();
+        // Fetch conversations initially to populate the UI
+        fetch("/api/get-conversations")
+            .then(response => response.json())
+            .then(data => {
+                updateConversations(data.conversations);
+            });
     </script>
 </body>
 </html>

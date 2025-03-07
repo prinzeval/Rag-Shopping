@@ -1,18 +1,39 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import requests
 import os
+import json
+from datetime import datetime
+from typing import List, Dict
 
 app = FastAPI()
 
 # Your WhatsApp Business API credentials
-ACCESS_TOKEN = "EAAk2WSNlS4oBO3REZCGG9ykQkxgtKzWvHrRWNDQ47VgQyVH3QTOJbf2XO8KiLFYG3a793VJZAfshh3UuetJ5vr6IHi0XroYKglDIMA3kkHfUR11al0DZARLfR008uTxu56UmZCdqJu5URDoy4PXtNSCmnrRDjbB6V7ze9nUMKgvpckL9S259oPUt2piXM0BuM4TUOes8pJqLaC8ouZCZATvI83OwHiZBFFIxZACupaavpxj79LwMLyzt"
+ACCESS_TOKEN = "EAAk2WSNlS4oBO4MytsRlXTv6y5XTEfZCiWSdC3zVllHUZA5czg1yj5uaaMwYNddxm8CM8E5HuD7P3exTHf1a7pZAZBfgpcIRr2QJLnTIBgpHhG3XyK4PHi7drEUMbP82GhKToJhDKbwC5ccrmpjPZAGeKsPaPZCtTebVoDdTGYrfuW4xuJxCC3iqYtP3ZBQmZB2yntHkxBtgwlPyp1KuKrPlQqRxtQZAEvokYW8vLYyf8wu2IwJyzGbEZD"
 PHONE_NUMBER_ID = "594079853780037"
 
 # Store conversations in memory
 conversations = {}
+
+# WebSocket connection manager
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: str):
+        for connection in self.active_connections:
+            await connection.send_text(message)
+
+manager = ConnectionManager()
 
 # Mount static files
 os.makedirs("static", exist_ok=True)
@@ -42,14 +63,24 @@ async def receive_whatsapp_message(request: Request):
                         message_text = message["text"]["body"]
                         print(f"Received '{message_text}' from {sender_number}")
 
+                        # Current timestamp for the message
+                        timestamp = datetime.now().strftime("%I:%M %p")
+                        
                         # Store the message in conversations
                         if sender_number not in conversations:
                             conversations[sender_number] = []
                         conversations[sender_number].append({
                             "type": "customer",
                             "text": message_text,
-                            "time": "10:00 AM"  # Replace with actual timestamp
+                            "time": timestamp
                         })
+                        
+                        # Send update via WebSocket
+                        await manager.broadcast(json.dumps({
+                            "type": "new_message",
+                            "sender": sender_number,
+                            "conversations": conversations
+                        }))
 
     return {"status": "Message processed"}
 
@@ -72,14 +103,24 @@ async def send_message(message: MessageData):
         response_data = response.json()
         print(f"📤 Reply Sent: {response_data}")
 
+        # Current timestamp for the message
+        timestamp = datetime.now().strftime("%I:%M %p")
+        
         # Store the sent message in conversations
         if message.to not in conversations:
             conversations[message.to] = []
         conversations[message.to].append({
             "type": "agent",
             "text": message.text,
-            "time": "10:00 AM"  # Replace with actual timestamp
+            "time": timestamp
         })
+        
+        # Send update via WebSocket
+        await manager.broadcast(json.dumps({
+            "type": "new_message",
+            "sender": message.to,
+            "conversations": conversations
+        }))
 
         return {"status": "Message sent", "response": response_data}
     except Exception as e:
@@ -89,6 +130,24 @@ async def send_message(message: MessageData):
 @app.get("/api/get-conversations")
 async def get_conversations():
     return {"conversations": conversations}
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        # Send initial data when connected
+        await websocket.send_text(json.dumps({
+            "type": "initial_data", 
+            "conversations": conversations
+        }))
+        
+        # Keep the connection alive and handle any messages from client
+        while True:
+            data = await websocket.receive_text()
+            # Process any client messages if needed
+            print(f"Received message from client: {data}")
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
 
 if __name__ == "__main__":
     import uvicorn
