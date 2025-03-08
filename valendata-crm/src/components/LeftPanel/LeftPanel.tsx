@@ -1,6 +1,7 @@
 // LeftPanel.tsx
 import React from 'react';
 import { Conversations } from '../types';
+import './leftpanel.css';
 
 interface LeftPanelProps {
   conversations: Conversations;
@@ -33,7 +34,7 @@ const LeftPanel: React.FC<LeftPanelProps> = ({
               {phoneNumber.substring(0, 2)}
             </div>
             <div className="customer-info">
-              <h4>Customer {phoneNumber.substring(0, 6)}...</h4>
+              <h4>{phoneNumber}</h4>
               <p>
                 {conversations[phoneNumber][conversations[phoneNumber].length - 1]?.text || 'New conversation'}
               </p>

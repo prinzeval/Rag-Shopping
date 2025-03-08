@@ -1,6 +1,7 @@
 // RightPanel.tsx
 import React, { useState } from 'react';
 import { Conversations, Message } from '../types';
+import './rightpanel.css';
 
 interface RightPanelProps {
   currentCustomer: string | null;
@@ -28,7 +29,7 @@ const RightPanel: React.FC<RightPanelProps> = ({
       {currentCustomer ? (
         <>
           <div className="chat-header">
-            <h3>Customer {currentCustomer.substring(0, 6)}...</h3>
+            <h3>{currentCustomer}</h3>
           </div>
           <div className="message-container">
             {conversations[currentCustomer].map((msg: Message, index: number) => (

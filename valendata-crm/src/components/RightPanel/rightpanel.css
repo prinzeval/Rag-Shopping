@@ -1,85 +1,157 @@
-/* Sidebar.css */
+/* RightPanel.css */
+.right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+}
+
+.chat-header {
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+  background-color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.chat-header h3 {
+  color: #333;
+  font-size: 16px;
+}
+
+.message-container {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  background-color: #f9f9f9;
+}
+
+.message {
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  max-width: 70%;
+}
+
+.message.customer {
+  align-self: flex-start;
+}
+
+.message.agent {
+  align-self: flex-end;
+}
+
+.bubble {
+  padding: 10px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+
+.message.customer .bubble {
+  background-color: white;
+  border: 1px solid #ddd;
+}
+
+.message.agent .bubble {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.time {
+  font-size: 11px;
+  color: #666;
+  padding: 0 8px;
+}
+
+.message-input {
+  padding: 16px;
+  border-top: 1px solid #eee;
+  background-color: white;
+  display: flex;
+  gap: 8px;
+}
+
+.message-input input {
+  flex: 1;
+  padding: 10px 16px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  outline: none;
+}
+
+.message-input button {
+  padding: 10px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.message-input button:hover {
+  background-color: #45a049;
+}
+
+.select-customer {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Sidebar Styles */
 .sidebar {
-    flex: 0 0 380px;
-    display: flex;
-    flex-direction: column;
-    background-color: var(--secondary-color);
-    border-right: 1px solid var(--border-color);
-    overflow: hidden;
-  }
-  
-  .user-profile {
-    display: flex;
-    align-items: center;
-    padding: 15px;
-    background-color: var(--primary-color);
-    color: var(--text-light);
-  }
-  
-  .avatar-container {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #555;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    margin-right: 10px;
-  }
-  
-  .search-container {
-    display: flex;
-    align-items: center;
-    padding: 10px 15px;
-    background-color: #f6f6f6;
-    border-bottom: 1px solid var(--border-color);
-  }
-  
-  .search-bar {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    background-color: white;
-    border-radius: 20px;
-    padding: 8px 15px;
-    margin-right: 10px;
-  }
-  
-  .search-bar input {
-    flex: 1;
-    border: none;
-    outline: none;
-    margin-left: 10px;
-    font-size: 14px;
-    color: var(--text-primary);
-  }
-  
-  .search-bar i {
-    color: var(--text-secondary);
-  }
-  
-  .filter-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    color: var(--text-secondary);
-  }
-  
-  .conversation-list {
-    flex: 1;
-    overflow-y: auto;
-    background-color: white;
-  }
-  
-  #no-chats {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100px;
-    color: var(--text-secondary);
-    font-size: 14px;
-  }
+  flex: 0 0 380px;
+  display: flex;
+  flex-direction: column;
+  background-color: #f6f6f6;
+  border-right: 1px solid #ddd;
+  overflow: hidden;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  background-color: #4CAF50;
+  color: white;
+}
+
+.search-container {
+  display: flex;
+  align-items: center;
+  padding: 10px 15px;
+  background-color: #f6f6f6;
+  border-bottom: 1px solid #ddd;
+}
+
+.filter-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: #666;
+}
+
+.conversation-list {
+  flex: 1;
+  overflow-y: auto;
+  background-color: white;
+}
+
+#no-chats {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100px;
+  color: #666;
+  font-size: 14px;
+}

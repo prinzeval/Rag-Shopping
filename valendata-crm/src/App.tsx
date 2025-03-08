@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import LeftPanel from './components/LeftPanel/LeftPanel';
 import RightPanel from './components/RightPanel/RightPanel';
 import { Conversations } from './components/types';
+import './App.css';
 
 const App: React.FC = () => {
   const [conversations, setConversations] = useState<Conversations>({});

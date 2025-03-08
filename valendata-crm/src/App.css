@@ -1,0 +1,22 @@
+/* App.css */
+.app-container {
+  display: flex;
+  height: 100vh;
+  background-color: #f5f5f5;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+  }
+
+  .left-panel {
+    width: 100%;
+    height: 40vh;
+  }
+
+  .right-panel {
+    height: 60vh;
+  }
+}
