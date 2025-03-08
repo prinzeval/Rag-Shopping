@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Interface</title>
+    <link rel="stylesheet" href="static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="chat-interface">
+        <!-- Left sidebar -->
+        <div class="sidebar">
+            <!-- User profile -->
+            <div class="user-profile">
+                <div class="avatar-container">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+            
+            <!-- Search bar -->
+            <div class="search-container">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search or start a new chat">
+                </div>
+                <button class="filter-button">
+                    <i class="fas fa-filter"></i>
+                </button>
+            </div>
+            
+            <!-- Conversation list -->
+            <div class="conversation-list" id="customers">
+                <div id="no-chats">No active chats</div>
+            </div>
+        </div>
+        
+        <!-- Main chat area -->
+        <div class="chat-area">
+            <!-- Chat header -->
+            <div class="chat-header">
+                <div class="chat-header-info">
+                    <div class="chat-avatar">
+                        <img src="/api/placeholder/40/40" alt="Profile" id="current-customer-avatar" />
+                    </div>
+                    <div class="chat-details">
+                        <div class="chat-name" id="current-customer">Chat Bubble</div>
+                        <div class="chat-status">See members</div>
+                    </div>
+                </div>
+                <div class="chat-actions">
+                    <button class="action-button">
+                        <i class="fas fa-video"></i>
+                    </button>
+                    <button class="action-button close-button">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Messages container -->
+            <div class="messages-container" id="chat-messages">
+                <div class="no-chat-selected">
+                    <p>Select a conversation to start chatting</p>
+                </div>
+            </div>
+            
+            <!-- Message input -->
+            <div class="message-input-container">
+                <button class="input-action-button">
+                    <i class="far fa-smile"></i>
+                </button>
+                <button class="input-action-button">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <div class="message-input">
+                    <input type="text" id="message-input" placeholder="Type a message" disabled>
+                </div>
+                <button class="input-action-button send-button" id="send-button" disabled>
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="connection-status" class="connection-status connecting">
+        Connecting...
+    </div>
+
+    <script>
+        let currentCustomer = null;
+        let unreadMessages = {}; // Track unread messages for each customer
+        let socket = null;
+
+        // Initialize WebSocket connection
+        function connectWebSocket() {
+            // Determine correct WebSocket URL (handle both HTTP and HTTPS)
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws`;
+            
+            // Update connection status
+            document.getElementById('connection-status').className = 'connection-status connecting';
+            document.getElementById('connection-status').textContent = 'Connecting...';
+            
+            // Create WebSocket
+            socket = new WebSocket(wsUrl);
+            
+            // WebSocket event handlers
+            socket.onopen = function(e) {
+                console.log('WebSocket connection established');
+                document.getElementById('connection-status').className = 'connection-status connected';
+                document.getElementById('connection-status').textContent = 'Connected';
+                
+                // Hide status indicator after 3 seconds
+                setTimeout(() => {
+                    document.getElementById('connection-status').style.opacity = '0';
+                }, 3000);
+            };
+            
+            socket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                console.log('Message from server:', data);
+                
+                if (data.type === 'initial_data' || data.type === 'new_message') {
+                    updateConversations(data.conversations);
+                    
+                    // If current customer conversation is updated, refresh the chat
+                    if (currentCustomer && data.conversations[currentCustomer]) {
+                        displayConversation(data.conversations[currentCustomer]);
+                    }
+                    
+                    // Handle unread messages
+                    if (data.type === 'new_message' && data.sender !== currentCustomer) {
+                        unreadMessages[data.sender] = (unreadMessages[data.sender] || 0) + 1;
+                        updateCustomerList(data.conversations);
+                    }
+                }
+            };
+            
+            socket.onclose = function(event) {
+                console.log('WebSocket connection closed. Attempting to reconnect...');
+                document.getElementById('connection-status').className = 'connection-status disconnected';
+                document.getElementById('connection-status').textContent = 'Disconnected. Reconnecting...';
+                document.getElementById('connection-status').style.opacity = '1';
+                
+                // Try to reconnect after 3 seconds
+                setTimeout(connectWebSocket, 3000);
+            };
+            
+            socket.onerror = function(error) {
+                console.error('WebSocket error:', error);
+                document.getElementById('connection-status').className = 'connection-status disconnected';
+                document.getElementById('connection-status').textContent = 'Connection error';
+            };
+        }
+
+        // Update customer list in UI
+        function updateCustomerList(conversations) {
+            const customersDiv = document.getElementById("customers");
+            const noChatsDiv = document.getElementById("no-chats");
+            
+            if (Object.keys(conversations).length > 0) {
+                if (noChatsDiv) customersDiv.innerHTML = "";
+                
+                for (const phoneNumber in conversations) {
+                    // Check if this customer item already exists
+                    let customerItem = document.querySelector(`.conversation-item[data-number="${phoneNumber}"]`);
+                    
+                    if (!customerItem) {
+                        customerItem = document.createElement("div");
+                        customerItem.className = "conversation-item";
+                        customerItem.dataset.number = phoneNumber;
+                        customerItem.addEventListener("click", () => switchCustomer(phoneNumber));
+                        customersDiv.appendChild(customerItem);
+                    }
+                    
+                    if (phoneNumber === currentCustomer) {
+                        customerItem.classList.add("active");
+                    } else {
+                        customerItem.classList.remove("active");
+                    }
+                    
+                    // Get last message for preview
+                    const messages = conversations[phoneNumber];
+                    const lastMessage = messages[messages.length - 1];
+                    const preview = lastMessage?.text || "New conversation";
+                    const time = lastMessage?.time || "";
+                    
+                    // Determine if this is a group or private chat
+                    const chatType = phoneNumber.startsWith("group_") ? "Group Chat" : "Private Chat";
+                    const displayName = phoneNumber.startsWith("group_") ? 
+                                       phoneNumber.replace("group_", "Group ") : 
+                                       phoneNumber.substring(0, 6) + "...";
+                    
+                    customerItem.innerHTML = `
+                        <div class="conversation-avatar">
+                            <div class="avatar-circle">${displayName[0]}</div>
+                            <span class="status-dot"></span>
+                        </div>
+                        <div class="conversation-info">
+                            <div class="conversation-name">${chatType}</div>
+                            <div class="conversation-preview">${preview.length > 20 ? preview.substring(0, 20) + '...' : preview}</div>
+                        </div>
+                        <div class="conversation-meta">
+                            <div class="conversation-time">${time}</div>
+                            ${unreadMessages[phoneNumber] ? `<div class="unread-badge">${unreadMessages[phoneNumber]}</div>` : ""}
+                        </div>
+                    `;
+                }
+            } else {
+                customersDiv.innerHTML = '<div id="no-chats">No active chats</div>';
+            }
+        }
+        
+        // Update conversations with new data
+        function updateConversations(conversations) {
+            updateCustomerList(conversations);
+        }
+
+        // Switch to a customer conversation
+        function switchCustomer(phoneNumber) {
+            currentCustomer = phoneNumber;
+            document.getElementById("current-customer").textContent = phoneNumber;
+            document.getElementById("message-input").disabled = false;
+            document.getElementById("send-button").disabled = false;
+
+            // Update active class in conversation list
+            document.querySelectorAll('.conversation-item').forEach(item => {
+                if (item.dataset.number === phoneNumber) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+
+            // Clear unread messages for this customer
+            unreadMessages[phoneNumber] = 0;
+            
+            // Fetch the current conversations (we already have them from WebSocket)
+            fetch("/api/get-conversations")
+                .then(response => response.json())
+                .then(data => {
+                    updateCustomerList(data.conversations);
+                    if (data.conversations[phoneNumber]) {
+                        displayConversation(data.conversations[phoneNumber]);
+                    }
+                });
+        }
+
+        // Display messages for a customer
+        function displayConversation(messages) {
+            const chatMessages = document.getElementById("chat-messages");
+            chatMessages.innerHTML = "";
+
+            if (messages && messages.length > 0) {
+                // Group messages by date
+                let currentDate = '';
+                
+                for (const message of messages) {
+                    // For demo purposes - extract date from time or use a placeholder
+                    const messageDate = "Today"; // Would normally parse from message.time
+                    
+                    // Add date separator if needed
+                    if (messageDate !== currentDate) {
+                        currentDate = messageDate;
+                        const dateDiv = document.createElement("div");
+                        dateDiv.className = "date-separator";
+                        dateDiv.textContent = messageDate;
+                        chatMessages.appendChild(dateDiv);
+                    }
+                    
+                    const messageDiv = document.createElement("div");
+                    messageDiv.className = `message ${message.type === 'customer' ? 'received' : 'sent'}`;
+                    
+                    messageDiv.innerHTML = `
+                        <div class="message-bubble">
+                            ${message.text}
+                        </div>
+                        <div class="message-info">
+                            <span class="message-time">${message.time}</span>
+                            ${message.type === 'agent' ? '<span class="message-status"><i class="fas fa-check"></i></span>' : ''}
+                        </div>
+                    `;
+                    
+                    chatMessages.appendChild(messageDiv);
+                }
+            } else {
+                chatMessages.innerHTML = '<div class="no-messages">No messages yet</div>';
+            }
+
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Send a message
+        async function sendMessage() {
+            const input = document.getElementById("message-input");
+            const text = input.value.trim();
+
+            if (text && currentCustomer) {
+                try {
+                    await fetch("/api/send-message", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ to: currentCustomer, text })
+                    });
+                    input.value = "";
+                } catch (error) {
+                    console.error("Error sending message:", error);
+                    alert("Failed to send message. Please try again.");
+                }
+            }
+        }
+
+        // Add event listeners
+        document.getElementById("send-button").addEventListener("click", sendMessage);
+        document.getElementById("message-input").addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                sendMessage();
+            }
+        });
+
+        // Initial connection
+        connectWebSocket();
+
+        // Fetch conversations initially to populate the UI
+        fetch("/api/get-conversations")
+            .then(response => response.json())
+            .then(data => {
+                updateConversations(data.conversations);
+            });
+    </script>
+</body>
+</html>
