@@ -1,6 +1,5 @@
 from fastapi import FastAPI, Request, HTTPException, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import requests
 import os
@@ -10,8 +9,17 @@ from typing import List, Dict
 
 app = FastAPI()
 
+# Add CORS middleware to allow React app to communicate with the backend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Allow requests from React app
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
+
 # Your WhatsApp Business API credentials
-ACCESS_TOKEN = "EAAk2WSNlS4oBO4MytsRlXTv6y5XTEfZCiWSdC3zVllHUZA5czg1yj5uaaMwYNddxm8CM8E5HuD7P3exTHf1a7pZAZBfgpcIRr2QJLnTIBgpHhG3XyK4PHi7drEUMbP82GhKToJhDKbwC5ccrmpjPZAGeKsPaPZCtTebVoDdTGYrfuW4xuJxCC3iqYtP3ZBQmZB2yntHkxBtgwlPyp1KuKrPlQqRxtQZAEvokYW8vLYyf8wu2IwJyzGbEZD"
+ACCESS_TOKEN = "EAAk2WSNlS4oBO5sYmOYnP6ogXhzIw0KM9WbxhrBYhAZAKBRbucd0Bf03yZCHZAGy5GK1a5UZAZCusGZAo59x9zDh9y9A1hBbOMZAmM0CzGdounN7SZB3Clgqn9osuy7H44lgQmMGMZAvhvZBTbtfo4AcGGLe14Hi3V76cPg7XVY9dMy8q4zZACvEqWCXBJpmWi7RwdRdSo3s44e1ZCT3lt0SgPyqapJV1oFsLMq8X03hP0IAWNs9JR8A9iMi"
 PHONE_NUMBER_ID = "594079853780037"
 
 # Store conversations in memory
@@ -35,18 +43,10 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-# Mount static files
-os.makedirs("static", exist_ok=True)
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
+# Pydantic model for message data
 class MessageData(BaseModel):
     to: str
     text: str
-
-@app.get("/")
-async def get_chat_ui():
-    with open("static/index.html", "r") as file:
-        return HTMLResponse(content=file.read())
 
 @app.post("/webhook")
 async def receive_whatsapp_message(request: Request):

@@ -1,0 +1,50 @@
+/* MessageInput.css */
+.message-input-container {
+    display: flex;
+    align-items: center;
+    background-color: var(--primary-color);
+    padding: 10px 15px;
+  }
+  
+  .message-input {
+    flex: 1;
+    background-color: white;
+    border-radius: 20px;
+    padding: 9px 12px;
+    margin: 0 10px;
+  }
+  
+  .message-input input {
+    width: 100%;
+    border: none;
+    outline: none;
+    font-size: 15px;
+    color: var(--text-primary);
+  }
+  
+  .message-input input::placeholder {
+    color: var(--text-secondary);
+  }
+  
+  .input-action-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    color: rgba(255, 255, 255, 0.8);
+    transition: all 0.2s;
+  }
+  
+  .input-action-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .send-button {
+    color: var(--accent-color);
+  }
+  
+  .send-button:disabled {
+    color: rgba(255, 255, 255, 0.4);
+  }

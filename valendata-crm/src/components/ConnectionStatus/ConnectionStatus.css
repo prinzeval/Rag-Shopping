@@ -1,0 +1,41 @@
+/* ConnectionStatus.css */
+.connection-status {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 16px;
+    border-radius: 0 0 8px 8px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    transition: opacity 0.3s, top 0.3s;
+  }
+  
+  .connection-status.connecting {
+    background-color: #ffa000;
+    color: white;
+  }
+  
+  .connection-status.connected {
+    background-color: var(--success-color);
+    color: white;
+    opacity: 1;
+    animation: fadeOut 3s forwards;
+    animation-delay: 2s;
+  }
+  
+  .connection-status.disconnected {
+    background-color: var(--error-color);
+    color: white;
+  }
+  
+  @keyframes fadeOut {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }

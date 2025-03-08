@@ -1,0 +1,85 @@
+/* Sidebar.css */
+.sidebar {
+    flex: 0 0 380px;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--secondary-color);
+    border-right: 1px solid var(--border-color);
+    overflow: hidden;
+  }
+  
+  .user-profile {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background-color: var(--primary-color);
+    color: var(--text-light);
+  }
+  
+  .avatar-container {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #555;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    margin-right: 10px;
+  }
+  
+  .search-container {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: #f6f6f6;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .search-bar {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background-color: white;
+    border-radius: 20px;
+    padding: 8px 15px;
+    margin-right: 10px;
+  }
+  
+  .search-bar input {
+    flex: 1;
+    border: none;
+    outline: none;
+    margin-left: 10px;
+    font-size: 14px;
+    color: var(--text-primary);
+  }
+  
+  .search-bar i {
+    color: var(--text-secondary);
+  }
+  
+  .filter-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: var(--text-secondary);
+  }
+  
+  .conversation-list {
+    flex: 1;
+    overflow-y: auto;
+    background-color: white;
+  }
+  
+  #no-chats {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100px;
+    color: var(--text-secondary);
+    font-size: 14px;
+  }
