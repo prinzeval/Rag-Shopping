@@ -1,6 +1,6 @@
 // RightPanel.tsx
 import React, { useState } from 'react';
-import { Conversations, Message } from './types';
+import { Conversations, Message } from '../types';
 
 interface RightPanelProps {
   currentCustomer: string | null;

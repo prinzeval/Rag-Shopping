@@ -1,6 +1,6 @@
 // LeftPanel.tsx
 import React from 'react';
-import { Conversations } from './types';
+import { Conversations } from '../types';
 
 interface LeftPanelProps {
   conversations: Conversations;
