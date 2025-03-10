@@ -10,19 +10,85 @@ const Catalog: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('list');
   const [activeCatalog, setActiveCatalog] = useState<any>(null);
   const [catalogs, setCatalogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [responseDetails, setResponseDetails] = useState<any>(null);
+
+  // API base URL - adjust if needed
+  // Make sure this matches your FastAPI server address
+  const API_BASE_URL = 'http://localhost:8000/api'; // Full URL with port
 
   // Fetch catalogs from the backend
-  useEffect(() => {
-    const fetchCatalogs = async () => {
-      try {
-        const response = await fetch('/api/catalogs');
-        const data = await response.json();
-        setCatalogs(data.catalogs);
-      } catch (error) {
-        console.error('Error fetching catalogs:', error);
+  const fetchCatalogs = async () => {
+    setLoading(true);
+    setError(null);
+    setResponseDetails(null);
+    
+    try {
+      const url = `${API_BASE_URL}/catalogs`;
+      console.log(`Fetching catalogs from: ${url}`);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        // Include credentials if your API requires cookies/auth
+        credentials: 'include'
+      });
+      
+      // Store response details for debugging
+      const responseInfo = {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries([...response.headers.entries()]),
+      };
+      setResponseDetails(responseInfo);
+      console.log('Response details:', responseInfo);
+      
+      // Get the response text first
+      const responseText = await response.text();
+      console.log('Raw response:', responseText.substring(0, 200) + '...');
+      
+      // Check if response is OK
+      if (!response.ok) {
+        throw new Error(`HTTP error ${response.status}: ${response.statusText}. Details: ${responseText}`);
       }
-    };
+      
+      // Try to parse JSON only if there's content
+      if (responseText.trim()) {
+        try {
+          const data = JSON.parse(responseText);
+          console.log("Parsed data:", data);
+          
+          // Check if data has the expected structure
+          if (data && Array.isArray(data.catalogs)) {
+            setCatalogs(data.catalogs);
+          } else {
+            console.warn("Response doesn't contain catalog array:", data);
+            setCatalogs([]);
+          }
+        } catch (parseError) {
+          console.error('JSON parsing error:', parseError);
+          console.error('Response text that failed to parse:', responseText);
+          throw new Error(`Failed to parse server response as JSON. Server returned: ${responseText.substring(0, 100)}...`);
+        }
+      } else {
+        console.warn("Empty response received");
+        setCatalogs([]);
+      }
+    } catch (error) {
+      console.error('Error fetching catalogs:', error);
+      setError(`Failed to load catalogs: ${error.message}`);
+      setCatalogs([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // Initial fetch
+  useEffect(() => {
     fetchCatalogs();
   }, []);
 
@@ -31,11 +97,40 @@ const Catalog: React.FC = () => {
     setActiveCatalog(catalog);
   };
 
+  // Retry handler
+  const handleRetry = () => {
+    fetchCatalogs();
+  };
+
   // Render the appropriate component based on the active tab
   const renderContent = () => {
+    if (loading) {
+      return <div className="loading-indicator">Loading catalogs...</div>;
+    }
+
+    if (error) {
+      return (
+        <div className="error-container">
+          <div className="error-message">{error}</div>
+          {responseDetails && (
+            <div className="error-details">
+              <h4>Response Details:</h4>
+              <pre>{JSON.stringify(responseDetails, null, 2)}</pre>
+            </div>
+          )}
+          <button className="retry-button" onClick={handleRetry}>
+            Retry
+          </button>
+        </div>
+      );
+    }
+
     switch (activeTab) {
       case 'create':
-        return <CreateCatalog onCatalogCreated={() => setActiveTab('list')} />;
+        return <CreateCatalog onCatalogCreated={() => {
+          setActiveTab('list');
+          fetchCatalogs();
+        }} />;
       case 'add-product':
         return activeCatalog ? (
           <AddProduct catalogId={activeCatalog.id} onProductAdded={() => setActiveTab('list')} />
@@ -44,7 +139,10 @@ const Catalog: React.FC = () => {
         );
       case 'update-catalog':
         return activeCatalog ? (
-          <UpdateCatalog catalog={activeCatalog} onCatalogUpdated={() => setActiveTab('list')} />
+          <UpdateCatalog catalog={activeCatalog} onCatalogUpdated={() => {
+            setActiveTab('list');
+            fetchCatalogs();
+          }} />
         ) : (
           <p>Please select a catalog first.</p>
         );
@@ -60,7 +158,12 @@ const Catalog: React.FC = () => {
             catalogs={catalogs}
             activeCatalog={activeCatalog}
             onSelectCatalog={handleSelectCatalog}
-            onDeleteCatalog={(id) => setCatalogs(catalogs.filter((cat) => cat.id !== id))}
+            onDeleteCatalog={(id) => {
+              setCatalogs(catalogs.filter((cat) => cat.id !== id));
+              if (activeCatalog && activeCatalog.id === id) {
+                setActiveCatalog(null);
+              }
+            }}
           />
         );
     }
@@ -73,7 +176,10 @@ const Catalog: React.FC = () => {
         <div className="catalog-tabs">
           <button
             className={`tab-button ${activeTab === 'list' ? 'active' : ''}`}
-            onClick={() => setActiveTab('list')}
+            onClick={() => {
+              setActiveTab('list');
+              fetchCatalogs();
+            }}
           >
             Catalogs
           </button>
@@ -86,18 +192,21 @@ const Catalog: React.FC = () => {
           <button
             className={`tab-button ${activeTab === 'add-product' ? 'active' : ''}`}
             onClick={() => setActiveTab('add-product')}
+            disabled={!activeCatalog}
           >
             Add Product
           </button>
           <button
             className={`tab-button ${activeTab === 'update-catalog' ? 'active' : ''}`}
             onClick={() => setActiveTab('update-catalog')}
+            disabled={!activeCatalog}
           >
             Update Catalog
           </button>
           <button
             className={`tab-button ${activeTab === 'update-product' ? 'active' : ''}`}
             onClick={() => setActiveTab('update-product')}
+            disabled={!activeCatalog}
           >
             Update Product
           </button>
