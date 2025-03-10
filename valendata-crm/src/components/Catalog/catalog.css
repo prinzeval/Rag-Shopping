@@ -5,12 +5,15 @@
     flex-direction: column;
     background-color: var(--dark);
     overflow: hidden;
+    padding: 20px;
   }
   
   .catalog-header {
     padding: 20px;
     background-color: var(--dark-2);
     border-bottom: 1px solid rgba(12, 223, 255, 0.1);
+    border-radius: 12px;
+    margin-bottom: 20px;
   }
   
   .catalog-header h2 {
@@ -21,11 +24,13 @@
     background-clip: text;
     color: transparent;
     font-weight: 700;
+    font-size: 24px;
   }
   
   .catalog-tabs {
     display: flex;
     gap: 10px;
+    flex-wrap: wrap;
   }
   
   .tab-button {
@@ -58,20 +63,141 @@
     overflow-y: auto;
     background-image: radial-gradient(rgba(12, 223, 255, 0.03) 1px, transparent 1px);
     background-size: 20px 20px;
+    border-radius: 12px;
   }
   
-  .catalog-content::-webkit-scrollbar {
-    width: 6px;
-    background-color: transparent;
+  /* Form Styles */
+  .create-catalog-form,
+  .add-product-form,
+  .update-catalog-form,
+  .update-product-form {
+    background-color: var(--dark-2);
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    max-width: 600px;
+    margin: 0 auto;
+    border: 1px solid rgba(12, 223, 255, 0.1);
+    position: relative;
   }
   
-  .catalog-content::-webkit-scrollbar-thumb {
-    background-color: var(--gray-3);
-    border-radius: 3px;
+  .create-catalog-form::before,
+  .add-product-form::before,
+  .update-catalog-form::before,
+  .update-product-form::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    border-radius: 12px 12px 0 0;
   }
   
-  .catalog-content:hover::-webkit-scrollbar-thumb {
-    background-color: var(--primary-dark);
+  .create-catalog-form h3,
+  .add-product-form h3,
+  .update-catalog-form h3,
+  .update-product-form h3 {
+    margin-bottom: 24px;
+    color: var(--light);
+    font-size: 20px;
+    text-align: center;
+  }
+  
+  .form-group {
+    margin-bottom: 20px;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--gray-3);
+    font-weight: 500;
+    font-size: 14px;
+  }
+  
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid rgba(12, 223, 255, 0.2);
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    background-color: var(--dark-3);
+    color: var(--light);
+    transition: var(--transition-normal);
+  }
+  
+  .form-group textarea {
+    min-height: 120px;
+    resize: vertical;
+  }
+  
+  .form-group input:focus,
+  .form-group textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(12, 223, 255, 0.1);
+  }
+  
+  .form-button {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: var(--dark);
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-normal);
+    display: block;
+    width: 100%;
+    margin-top: 30px;
+    box-shadow: 0 4px 12px rgba(12, 223, 255, 0.3);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .form-button::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    border-radius: inherit;
+    opacity: 0;
+    background: linear-gradient(
+      to right,
+      transparent 0%,
+      rgba(255, 255, 255, 0.5) 50%,
+      transparent 100%
+    );
+    transform: translateX(-100%);
+    transition: var(--transition-normal);
+  }
+  
+  .form-button:hover {
+    box-shadow: 0 6px 16px rgba(12, 223, 255, 0.4);
+  }
+  
+  .form-button:hover::after {
+    opacity: 0.3;
+    transform: translateX(100%);
+  }
+  
+  .form-button:disabled {
+    background: linear-gradient(135deg, var(--gray-2), var(--gray-3));
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  
+  /* Catalog List Styles */
+  .catalog-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
   }
   
   .catalogs-grid {
@@ -240,4 +366,99 @@
     border-radius: 12px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     border: 1px dashed rgba(12, 223, 255, 0.2);
+  }
+
+
+
+
+
+
+
+
+
+  .create-catalog-form {
+    background-color: var(--dark-2);
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    max-width: 600px;
+    margin: 0 auto;
+    border: 1px solid rgba(12, 223, 255, 0.1);
+    position: relative;
+  }
+  
+  .create-catalog-form::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    border-radius: 12px 12px 0 0;
+  }
+  
+  .create-catalog-form h3 {
+    margin-bottom: 24px;
+    color: var(--light);
+    font-size: 20px;
+    text-align: center;
+  }
+  
+  .form-group {
+    margin-bottom: 20px;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--gray-3);
+    font-weight: 500;
+    font-size: 14px;
+  }
+  
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid rgba(12, 223, 255, 0.2);
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    background-color: var(--dark-3);
+    color: var(--light);
+    transition: var(--transition-normal);
+  }
+  
+  .form-group textarea {
+    min-height: 120px;
+    resize: vertical;
+  }
+  
+  .form-group input:focus,
+  .form-group textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(12, 223, 255, 0.1);
+  }
+  
+  .form-button {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: var(--dark);
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-normal);
+    display: block;
+    width: 100%;
+    margin-top: 30px;
+    box-shadow: 0 4px 12px rgba(12, 223, 255, 0.3);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .form-button:hover {
+    box-shadow: 0 6px 16px rgba(12, 223, 255, 0.4);
   }
