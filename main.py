@@ -1,81 +1,69 @@
-from fastapi import FastAPI, Request, HTTPException, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi import FastAPI, HTTPException, Depends, Query
 from pydantic import BaseModel
-from supabase import create_client, Client
+from fastapi.middleware.cors import CORSMiddleware
+from supabase import create_client
+import requests
 from dotenv import load_dotenv
 import os
-import json
-from datetime import datetime
-from typing import List, Dict
-import requests
-import json
-from fastapi.middleware.cors import CORSMiddleware
+import logging
 
-# Load environment variables
-load_dotenv()
+# Configure logging
+logging.basicConfig(level=logging.INFO, 
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
-# Supabase connection setup
-supabase_url = os.getenv("SUPABASE_URL")
-supabase_key = os.getenv("SUPABASE_KEY")
-supabase: Client = create_client(supabase_url, supabase_key)
-
-# FastAPI app
 app = FastAPI()
 
-# Add CORS middleware to allow React app to communicate with the backend
+# Middleware for CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Allow requests from React app
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all HTTP methods
-    allow_headers=["*"],  # Allow all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
+# Load environment variables from .env file
+load_dotenv()
 
-# Your WhatsApp Business API credentials
-ACCESS_TOKEN = "EAAk2WSNlS4oBO4FlYNy9zZCn64Ft3hdge0ApiLRG3NZCXMYULOAWrqO6FL6P9WUbMYkuKGb8rs7sCUzZCXUtZCmT0emeqBpViHHV0IZBs6ZCUZBbZCjyJE3mA20nzBQGay3f5RRPJtSrOliAK778aoGvF9z4ZCAuc76ZA5NWC6XhpWye5dnQ55AkgqRalLA5Jfoz4WsiZBQNWW33MQnTkgNZC8yPtkqZCtA0V1BeGUBc4OQmmJdgMPAnm39gZD"
-PHONE_NUMBER_ID = "594079853780037"
+# Supabase client setup with error handling
+url = os.getenv("SUPABASE_URL")
+key = os.getenv("SUPABASE_KEY")
 
-# Store conversations in memory (optional, now using DB)
-conversations = {}
+if not url or not key:
+    logger.error("Supabase credentials missing. Make sure SUPABASE_URL and SUPABASE_KEY are set in .env file")
 
-# WebSocket connection manager
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: List[WebSocket] = []
+try:
+    supabase = create_client(url, key)
+    logger.info(f"Supabase client initialized with URL: {url[:20]}...")
+except Exception as e:
+    logger.error(f"Failed to initialize Supabase client: {str(e)}")
+    supabase = None
 
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections.append(websocket)
+# Dependency to ensure Supabase is connected
+def get_supabase():
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Database connection is not available")
+    return supabase
 
-    def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
 
-    async def broadcast(self, message: str):
-        for connection in self.active_connections:
-            await connection.send_text(message)
+# ---------- MODELS ----------
 
-manager = ConnectionManager()
-
-# Mount static files
-os.makedirs("static", exist_ok=True)
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# Pydantic models
-class MessageData(BaseModel):
-    to: str
-    text: str
+class BusinessCreate(BaseModel):
+    name: str
+    business_id: str
+    access_token: str
+    phone_number_id: str
 
 
 class CatalogCreate(BaseModel):
     name: str
     description: str
-    business_id: str
-    access_token: str  # Add this field
+    business_id: int  # Reference to businesses table
+
 
 class ProductCreate(BaseModel):
-    catalog_id: int
+    catalog_id: int  # Reference to catalogs table
     retailer_id: str
     name: str
     description: str
@@ -87,148 +75,288 @@ class ProductCreate(BaseModel):
     brand: str
     google_product_category: str
 
-# API endpoints
-@app.post("/api/catalogs")
-async def create_catalog(catalog: CatalogCreate):
+
+class SimpleMessageData(BaseModel):
+    to: str
+    text: str
+
+
+# ---------- TESTING ENDPOINTS ----------
+
+@app.get("/")
+async def root():
+    return {"message": "API is running"}
+
+@app.get("/api/test-db")
+async def test_db():
     try:
-        response = supabase.table("catalogs").insert(catalog.dict()).execute()
+        if not url or not key:
+            return {
+                "status": "Configuration error", 
+                "detail": "Supabase credentials not configured",
+                "supabase_url_set": bool(url),
+                "supabase_key_set": bool(key)
+            }
+            
+        response = supabase.table("businesses").select("count", count="exact").execute()
+        return {"status": "Connected", "count": response.count}
+    except Exception as e:
+        logger.error(f"Database test failed: {str(e)}")
+        return {"status": "Failed", "error": str(e)}
+
+
+# ---------- BUSINESS MANAGEMENT ----------
+
+# Create a Business
+@app.post("/api/businesses")
+async def create_business(business: BusinessCreate, db = Depends(get_supabase)):
+    try:
+        logger.info(f"Creating business: {business.name}")
+        response = db.table("businesses").insert(business.model_dump()).execute()
+        logger.info(f"Business created successfully: {business.name}")
+        return {"status": "Business created", "business": response.data[0]}
+    except Exception as e:
+        logger.error(f"Error creating business: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Get all Businesses
+@app.get("/api/businesses")
+async def get_businesses(db = Depends(get_supabase)):
+    try:
+        response = db.table("businesses").select("*").execute()
+        return {"businesses": response.data}
+    except Exception as e:
+        logger.error(f"Error fetching businesses: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Get a specific Business
+@app.get("/api/businesses/{business_id}")
+async def get_business(business_id: str, db = Depends(get_supabase)):
+    try:
+        response = db.table("businesses").select("*").eq("business_id", business_id).single().execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Business not found")
+        return {"business": response.data}
+    except Exception as e:
+        logger.error(f"Error fetching business: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ---------- CATALOG MANAGEMENT ----------
+
+# Create a Catalog
+@app.post("/api/catalogs")
+async def create_catalog(catalog: CatalogCreate, db = Depends(get_supabase)):
+    try:
+        logger.info(f"Creating catalog: {catalog.name}")
+        response = db.table("catalogs").insert(catalog.model_dump()).execute()
         return {"status": "Catalog created", "catalog": response.data[0]}
     except Exception as e:
+        logger.error(f"Error creating catalog: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/products")
-async def add_product(product: ProductCreate):
-    try:
-        response = supabase.table("products").insert(product.dict()).execute()
-        return {"status": "Product added", "product": response.data[0]}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
+# Get all Catalogs
 @app.get("/api/catalogs")
-async def list_catalogs():
+async def get_catalogs(db = Depends(get_supabase)):
     try:
-        response = supabase.table("catalogs").select("*").execute()
+        response = db.table("catalogs").select("*").execute()
         return {"catalogs": response.data}
     except Exception as e:
+        logger.error(f"Error fetching catalogs: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.delete("/api/catalogs/{catalog_id}")
-async def delete_catalog(catalog_id: int):
+
+# Get Catalogs for a Business
+@app.get("/api/businesses/{business_id}/catalogs")
+async def get_business_catalogs(business_id: int, db = Depends(get_supabase)):
     try:
-        response = supabase.table("catalogs").delete().eq("id", catalog_id).execute()
-        if not response.data:
-            raise HTTPException(status_code=404, detail="Catalog not found")
-        return {"status": "Catalog deleted"}
+        response = db.table("catalogs").select("*").eq("business_id", business_id).execute()
+        return {"catalogs": response.data}
     except Exception as e:
+        logger.error(f"Error fetching catalogs for business: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# Existing endpoints (WhatsApp, WebSocket, etc.)
-@app.get("/")
-async def get_chat_ui():
-    with open("static/index.html", "r") as file:
-        return HTMLResponse(content=file.read())
 
-@app.post("/webhook")
-async def receive_whatsapp_message(request: Request):
-    data = await request.json()
-    print(f"📩 Incoming Message: {data}")
+# ---------- PRODUCT MANAGEMENT ----------
 
-    # Extract the message details
-    if "entry" in data:
-        for entry in data["entry"]:
-            for change in entry.get("changes", []):
-                if "value" in change and "messages" in change["value"]:
-                    for message in change["value"]["messages"]:
-                        sender_number = message["from"]
-                        message_text = message["text"]["body"]
-                        print(f"Received '{message_text}' from {sender_number}")
+# Create a Product
+@app.post("/api/products")
+async def create_product(product: ProductCreate, db = Depends(get_supabase)):
+    try:
+        logger.info(f"Creating product: {product.name}")
+        response = db.table("products").insert(product.model_dump()).execute()
+        return {"status": "Product created", "product": response.data[0]}
+    except Exception as e:
+        logger.error(f"Error creating product: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-                        # Current timestamp for the message
-                        timestamp = datetime.now().strftime("%I:%M %p")
-                        
-                        # Store the message in conversations
-                        if sender_number not in conversations:
-                            conversations[sender_number] = []
-                        conversations[sender_number].append({
-                            "type": "customer",
-                            "text": message_text,
-                            "time": timestamp
-                        })
-                        
-                        # Send update via WebSocket
-                        await manager.broadcast(json.dumps({
-                            "type": "new_message",
-                            "sender": sender_number,
-                            "conversations": conversations
-                        }))
 
-    return {"status": "Message processed"}
+# Get all Products
+@app.get("/api/products")
+async def get_products(db = Depends(get_supabase)):
+    try:
+        response = db.table("products").select("*").execute()
+        return {"products": response.data}
+    except Exception as e:
+        logger.error(f"Error fetching products: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
+
+# Get Products for a Catalog
+@app.get("/api/catalogs/{catalog_id}/products")
+async def get_catalog_products(catalog_id: int, db = Depends(get_supabase)):
+    try:
+        response = db.table("products").select("*").eq("catalog_id", catalog_id).execute()
+        return {"products": response.data}
+    except Exception as e:
+        logger.error(f"Error fetching products for catalog: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ---------- MESSAGING ----------
+
+# Get first available business or default business
+async def get_default_business(db):
+    try:
+        # First try to get the first business
+        response = db.table("businesses").select("*").limit(1).execute()
+        if response.data and len(response.data) > 0:
+            return response.data[0]
+        else:
+            raise HTTPException(status_code=404, detail="No businesses found. Please create a business first.")
+    except Exception as e:
+        logger.error(f"Error fetching default business: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Send WhatsApp Message with automatic business selection
 @app.post("/api/send-message")
-async def send_message(message: MessageData):
-    url = f"https://graph.facebook.com/v19.0/{PHONE_NUMBER_ID}/messages"
+async def send_message(message: SimpleMessageData, business_id: str = None, db = Depends(get_supabase)):
+    # Get business credentials - either from parameter or default
+    try:
+        if business_id:
+            logger.info(f"Fetching credentials for specified business: {business_id}")
+            business_response = (
+                db.table("businesses")
+                .select("access_token, phone_number_id, name, business_id")
+                .eq("business_id", business_id)
+                .single()
+                .execute()
+            )
+            business = business_response.data
+            
+            if not business:
+                logger.warning(f"Specified business not found: {business_id}")
+                raise HTTPException(status_code=404, detail=f"Business with ID {business_id} not found")
+        else:
+            # Get default business
+            logger.info("No business specified, using default business")
+            business = await get_default_business(db)
+            logger.info(f"Using default business: {business['name']}")
+        
+        access_token = business["access_token"]
+        phone_number_id = business["phone_number_id"]
+        
+    except Exception as e:
+        logger.error(f"Error fetching business credentials: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch business credentials")
+
+    # WhatsApp API URL and Headers
+    url = f"https://graph.facebook.com/v19.0/{phone_number_id}/messages"
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {ACCESS_TOKEN}"
+        "Authorization": f"Bearer {access_token}",
     }
     payload = {
         "messaging_product": "whatsapp",
         "to": message.to,
         "type": "text",
-        "text": {"body": message.text}
+        "text": {"body": message.text},
     }
 
+    # Send Message
     try:
+        logger.info(f"Sending WhatsApp message to: {message.to} using business: {business['name']}")
         response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()  # Raise exception for non-200 responses
         response_data = response.json()
-        print(f"📤 Reply Sent: {response_data}")
-
-        # Current timestamp for the message
-        timestamp = datetime.now().strftime("%I:%M %p")
-        
-        # Store the sent message in conversations
-        if message.to not in conversations:
-            conversations[message.to] = []
-        conversations[message.to].append({
-            "type": "agent",
-            "text": message.text,
-            "time": timestamp
-        })
-        
-        # Send update via WebSocket
-        await manager.broadcast(json.dumps({
-            "type": "new_message",
-            "sender": message.to,
-            "conversations": conversations
-        }))
-
-        return {"status": "Message sent", "response": response_data}
-    except Exception as e:
-        print(f"Error sending message: {str(e)}")
+        logger.info(f"Message sent successfully: {response_data}")
+        return {
+            "status": "Message sent", 
+            "response": response_data,
+            "business": {
+                "name": business["name"],
+                "business_id": business["business_id"]
+            }
+        }
+    except requests.RequestException as e:
+        logger.error(f"Error sending WhatsApp message: {str(e)}")
+        if hasattr(e, 'response') and e.response:
+            try:
+                error_detail = e.response.json()
+                logger.error(f"WhatsApp API error: {error_detail}")
+                return {"status": "Failed", "error": error_detail, "status_code": e.response.status_code}
+            except:
+                return {"status": "Failed", "error": str(e), "status_code": e.response.status_code if hasattr(e, 'response') else 500}
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/get-conversations")
-async def get_conversations():
-    return {"conversations": conversations}
 
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await manager.connect(websocket)
+# List Available Messages Templates
+@app.get("/api/message-templates")
+async def get_message_templates(business_id: str = Query(None), db = Depends(get_supabase)):
     try:
-        # Send initial data when connected
-        await websocket.send_text(json.dumps({
-            "type": "initial_data", 
-            "conversations": conversations
-        }))
+        # Get business credentials
+        if business_id:
+            business_response = (
+                db.table("businesses")
+                .select("access_token, phone_number_id, name")
+                .eq("business_id", business_id)
+                .single()
+                .execute()
+            )
+            business = business_response.data
+            
+            if not business:
+                raise HTTPException(status_code=404, detail=f"Business with ID {business_id} not found")
+        else:
+            # Get default business
+            business = await get_default_business(db)
         
-        # Keep the connection alive and handle any messages from client
-        while True:
-            data = await websocket.receive_text()
-            # Process any client messages if needed
-            print(f"Received message from client: {data}")
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
+        access_token = business["access_token"]
+        phone_number_id = business["phone_number_id"]
+        
+        # Fetch templates from WhatsApp API
+        url = f"https://graph.facebook.com/v19.0/{phone_number_id}/message_templates"
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+        }
+        
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        templates = response.json()
+        
+        return {
+            "business_name": business["name"],
+            "templates": templates
+        }
+        
+    except requests.RequestException as e:
+        logger.error(f"Error fetching message templates: {str(e)}")
+        if hasattr(e, 'response') and e.response:
+            try:
+                error_detail = e.response.json()
+                return {"status": "Failed", "error": error_detail}
+            except:
+                return {"status": "Failed", "error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error in get_message_templates: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)  
+    uvicorn.run(app, host="0.0.0.0", port=8000)
