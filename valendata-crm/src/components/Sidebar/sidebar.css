@@ -1,109 +1,109 @@
 /* sidebar.css */
 .sidebar {
-    width: 240px;
-    background: linear-gradient(135deg, var(--dark-2), var(--dark-3));
-    color: white;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    position: relative;
-    overflow: hidden;
-    border-right: 1px solid rgba(12, 223, 255, 0.2);
-  }
-  
-  .sidebar::after {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(
-      circle at center,
-      rgba(12, 223, 255, 0.03) 0%,
-      rgba(12, 223, 255, 0) 70%
-    );
-    z-index: 0;
-  }
-  
-  .sidebar-header {
-    padding: 24px 20px;
-    border-bottom: 1px solid rgba(248, 249, 250, 0.1);
-    position: relative;
-    z-index: 1;
-  }
-  
-  .sidebar-header h2 {
-    font-size: 22px;
-    letter-spacing: 0.5px;
-    margin: 0;
-    background: linear-gradient(90deg, var(--primary), var(--primary-light));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    font-weight: 700;
-  }
-  
-  .sidebar-menu {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 16px 0;
-    position: relative;
-    z-index: 1;
-  }
-  
-  .sidebar-item {
-    display: flex;
-    align-items: center;
-    padding: 14px 20px;
-    cursor: pointer;
-    transition: var(--transition-normal);
-    margin: 4px 8px;
-    border-radius: 8px;
-    position: relative;
-    overflow: hidden;
-  }
-  
-  .sidebar-item:hover {
-    background-color: rgba(12, 223, 255, 0.1);
-  }
-  
-  .sidebar-item.active {
-    background: linear-gradient(90deg, rgba(12, 223, 255, 0.2), rgba(12, 223, 255, 0.05));
-    box-shadow: var(--shadow-sm);
-  }
-  
-  .sidebar-item.active::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    height: 100%;
-    width: 4px;
-    background: var(--primary);
-    border-radius: 0 2px 2px 0;
-    box-shadow: 0 0 8px var(--primary);
-  }
-  
-  .sidebar-icon {
-    margin-right: 12px;
-    font-size: 18px;
-    width: 24px;
-    text-align: center;
-    transition: var(--transition-normal);
-  }
-  
-  .sidebar-item.active .sidebar-icon {
-    color: var(--primary);
-  }
-  
-  .sidebar-label {
-    font-size: 15px;
-    font-weight: 500;
-    transition: var(--transition-normal);
-  }
-  
-  .sidebar-item.active .sidebar-label {
-    color: var(--primary);
-  }
+  width: 240px;
+  background: linear-gradient(135deg, var(--dark-2), var(--dark-3));
+  color: white;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+  border-right: 1px solid rgba(12, 223, 255, 0.2);
+}
+
+.sidebar::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle at center,
+    rgba(12, 223, 255, 0.03) 0%,
+    rgba(12, 223, 255, 0) 70%
+  );
+  z-index: 0;
+}
+
+.sidebar-header {
+  padding: 24px 20px;
+  border-bottom: 1px solid rgba(248, 249, 250, 0.1);
+  position: relative;
+  z-index: 1;
+}
+
+.sidebar-header h2 {
+  font-size: 22px;
+  letter-spacing: 0.5px;
+  margin: 0;
+  background: linear-gradient(90deg, var(--primary), var(--primary-light));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 700;
+}
+
+.sidebar-menu {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  padding: 14px 20px;
+  cursor: pointer;
+  transition: var(--transition-normal);
+  margin: 4px 8px;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar-item:hover {
+  background-color: rgba(12, 223, 255, 0.1);
+}
+
+.sidebar-item.active {
+  background: linear-gradient(90deg, rgba(12, 223, 255, 0.2), rgba(12, 223, 255, 0.05));
+  box-shadow: var(--shadow-sm);
+}
+
+.sidebar-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background: var(--primary);
+  border-radius: 0 2px 2px 0;
+  box-shadow: 0 0 8px var(--primary);
+}
+
+.sidebar-icon {
+  margin-right: 12px;
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
+  transition: var(--transition-normal);
+}
+
+.sidebar-item.active .sidebar-icon {
+  color: var(--primary);
+}
+
+.sidebar-label {
+  font-size: 15px;
+  font-weight: 500;
+  transition: var(--transition-normal);
+}
+
+.sidebar-item.active .sidebar-label {
+  color: var(--primary);
+}
