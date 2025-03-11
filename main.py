@@ -26,7 +26,7 @@ app.add_middleware(
 
 # WhatsApp Business API credentials
 PHONE_NUMBER_ID = "594079853780037"
-WA_ACCESS_TOKEN = "EAAk2WSNlS4oBO9c2FZC28xYxlCK4Buei5G0t12cOMtZAmSXIQcbSF3cjZCSlJZCfnZCNmjucCUAB0WZC5nO3a51MMzZCA3dsrZAusNZBaiAlbtZBpP4Q9rOU2TedEU6zVuimn9uZAhHmblnxujyZAEJeBxZCZBeAvn9yZBQEgNcuzXF8rZBGBuLU0oxx8zQiKpMb1cQ5ZB7WNXhRxRroVEj4fMTOhcUApeGtijrL7W35G4C1rvuxOKpFCSW2GjtIZD"
+WA_ACCESS_TOKEN = "EAAk2WSNlS4oBOxIT1OP5HXq80X9Co6rmInl3sbivq8fUHuFOq9Lc2tzemxzF5Bq0ev8kfItnt4wzhwmOk2ZBvD1M0iwWAh5TADqso5VEx5DmkVmOkZBlejnrfNmUqS6DXLomQZB7mySMtfOwsIxoZCwVd1TaP4txVNT0NgS7loZCr6M7E1AZCGZCpXQdFSyp6MeQMyEe3SLRIAX2gTPQka7fdawLm19yuvTCUZCWFxLmK4PbqH2eT5gK"
 BUSINESS_ID = "1887710258302426"
 FB_BASE_URL = "https://graph.facebook.com/v19.0"
 
@@ -145,34 +145,63 @@ async def delete_catalog(catalog_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
+from typing import Optional
+import uuid
+
+app = FastAPI()
+
+class ProductCreate(BaseModel):
+    name: str
+    image_url: str
+    retailer_id: Optional[str] = None
+    description: Optional[str] = None
+    availability: Optional[str] = Field(default="in stock")
+    condition: Optional[str] = Field(default="new")
+    price: Optional[str] = None
+    link: Optional[str] = None
+    brand: Optional[str] = None
+    google_product_category: Optional[str] = None
+
 @app.post("/api/catalogs/{catalog_id}/products")
 async def add_product(catalog_id: str, product: ProductCreate):
     try:
         endpoint = f"{catalog_id}/products"
         
-        # Parse price and currency
-        price_value, currency = product.price.split()
+        # Generate retailer_id if not provided
+        retailer_id = product.retailer_id or f"product_{uuid.uuid4().hex[:8]}"
         
-        # Prepare the product data
+        # Prepare the product data with defaults
         product_data = {
-            "retailer_id": product.retailer_id,
+            "retailer_id": retailer_id,
             "name": product.name,
-            "description": product.description,
-            "availability": product.availability,
-            "condition": product.condition,
-            "price": price_value,
-            "currency": currency,
-            "link": product.link,
+            "description": product.description or product.name,
+            "availability": product.availability or "in stock",
+            "condition": product.condition or "new",
+            "link": product.link or "https://example.com/product",
             "image_url": product.image_url,
-            "brand": product.brand,
-            "google_product_category": product.google_product_category
+            "brand": product.brand or "Generic",
+            "google_product_category": product.google_product_category or "5181"
         }
         
+        # Handle price if provided
+        if product.price:
+            try:
+                price_value, currency = product.price.split()
+                product_data["price"] = f"{int(float(price_value))}"
+                product_data["currency"] = currency
+            except ValueError:
+                product_data["price"] = "0"
+                product_data["currency"] = "USD"
+        else:
+            product_data["price"] = "0"
+            product_data["currency"] = "USD"
         response = make_fb_api_request('POST', endpoint, product_data)
-        
         return {"status": "Product added", "product_id": response.get("id"), "details": response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
 
 @app.get("/api/catalogs/{catalog_id}/products")
 async def list_products(catalog_id: str):
