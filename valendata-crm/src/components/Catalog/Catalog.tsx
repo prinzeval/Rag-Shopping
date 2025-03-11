@@ -3,7 +3,7 @@ import CreateCatalog from './CreateCatalog';
 import AddProduct from './AddProduct';
 import ListCatalog from './ListCatalog';
 import UpdateCatalog from './UpdateCatalog';
-import UpdateCatalogProduct from './UpdateCatalogProduct';
+import ListCartProducts from './ListCartProducts'; // Updated import
 import './catalog.css';
 
 const Catalog: React.FC = () => {
@@ -15,7 +15,6 @@ const Catalog: React.FC = () => {
   const [responseDetails, setResponseDetails] = useState<any>(null);
 
   // API base URL - adjust if needed
-  // Make sure this matches your FastAPI server address
   const API_BASE_URL = 'http://localhost:8000/api'; // Full URL with port
 
   // Fetch catalogs from the backend
@@ -23,21 +22,20 @@ const Catalog: React.FC = () => {
     setLoading(true);
     setError(null);
     setResponseDetails(null);
-    
+
     try {
       const url = `${API_BASE_URL}/catalogs`;
       console.log(`Fetching catalogs from: ${url}`);
-      
+
       const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        // Include credentials if your API requires cookies/auth
-        credentials: 'include'
+        credentials: 'include', // Include credentials if your API requires cookies/auth
       });
-      
+
       // Store response details for debugging
       const responseInfo = {
         status: response.status,
@@ -46,22 +44,22 @@ const Catalog: React.FC = () => {
       };
       setResponseDetails(responseInfo);
       console.log('Response details:', responseInfo);
-      
+
       // Get the response text first
       const responseText = await response.text();
       console.log('Raw response:', responseText.substring(0, 200) + '...');
-      
+
       // Check if response is OK
       if (!response.ok) {
         throw new Error(`HTTP error ${response.status}: ${response.statusText}. Details: ${responseText}`);
       }
-      
+
       // Try to parse JSON only if there's content
       if (responseText.trim()) {
         try {
           const data = JSON.parse(responseText);
-          console.log("Parsed data:", data);
-          
+          console.log('Parsed data:', data);
+
           // Check if data has the expected structure
           if (data && Array.isArray(data.catalogs)) {
             setCatalogs(data.catalogs);
@@ -75,7 +73,7 @@ const Catalog: React.FC = () => {
           throw new Error(`Failed to parse server response as JSON. Server returned: ${responseText.substring(0, 100)}...`);
         }
       } else {
-        console.warn("Empty response received");
+        console.warn('Empty response received');
         setCatalogs([]);
       }
     } catch (error) {
@@ -146,9 +144,9 @@ const Catalog: React.FC = () => {
         ) : (
           <p>Please select a catalog first.</p>
         );
-      case 'update-product':
+      case 'list-products': // Updated case for listing products
         return activeCatalog ? (
-          <UpdateCatalogProduct catalogId={activeCatalog.id} onProductUpdated={() => setActiveTab('list')} />
+          <ListCartProducts catalogId={activeCatalog.id} />
         ) : (
           <p>Please select a catalog first.</p>
         );
@@ -204,11 +202,11 @@ const Catalog: React.FC = () => {
             Update Catalog
           </button>
           <button
-            className={`tab-button ${activeTab === 'update-product' ? 'active' : ''}`}
-            onClick={() => setActiveTab('update-product')}
+            className={`tab-button ${activeTab === 'list-products' ? 'active' : ''}`}
+            onClick={() => setActiveTab('list-products')}
             disabled={!activeCatalog}
           >
-            Update Product
+            List Products
           </button>
         </div>
       </div>
