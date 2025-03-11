@@ -5,7 +5,6 @@ interface ListCatalogProps {
   activeCatalog: any;
   onSelectCatalog: (catalog: any) => void;
   onDeleteCatalog: (id: string) => void;
-  error: string | null;
 }
 
 const ListCatalog: React.FC<ListCatalogProps> = ({
@@ -13,10 +12,14 @@ const ListCatalog: React.FC<ListCatalogProps> = ({
   activeCatalog,
   onSelectCatalog,
   onDeleteCatalog,
-  error,
 }) => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // API base URL - must match your FastAPI server
+  const API_BASE_URL = 'http://localhost:8000/api';
   
   const handleDeleteClick = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -27,9 +30,40 @@ const ListCatalog: React.FC<ListCatalogProps> = ({
   const handleConfirmDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (deletingId) {
-      await onDeleteCatalog(deletingId);
-      setConfirmDelete(false);
-      setDeletingId(null);
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const url = `${API_BASE_URL}/catalogs/${deletingId}/delete`;
+        console.log(`Deleting catalog at: ${url}`);
+        
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          credentials: 'include'
+        });
+        
+        // Get the response text
+        const responseText = await response.text();
+        
+        // Check if response is OK
+        if (!response.ok) {
+          throw new Error(`HTTP error ${response.status}: ${response.statusText}. Details: ${responseText}`);
+        }
+        
+        console.log('Catalog deleted successfully');
+        onDeleteCatalog(deletingId);
+      } catch (error) {
+        console.error('Error deleting catalog:', error);
+        setError(error instanceof Error ? error.message : 'An unexpected error occurred');
+      } finally {
+        setLoading(false);
+        setConfirmDelete(false);
+        setDeletingId(null);
+      }
     }
   };
   
@@ -39,24 +73,20 @@ const ListCatalog: React.FC<ListCatalogProps> = ({
     setDeletingId(null);
   };
 
-  if (error) {
-    return (
-      <div className="error-container">
-        <div className="error-icon">⚠️</div>
-        <p className="error-message">{error}</p>
-        <button 
-          className="retry-button"
-          onClick={() => window.location.reload()}
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="catalog-list">
       <h3>Available Catalogs</h3>
+      {error && (
+        <div className="error-container">
+          <div className="error-message">{error}</div>
+          <button 
+            className="retry-button"
+            onClick={() => setError(null)}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
       {catalogs.length === 0 ? (
         <div className="no-catalogs">
           <p>No catalogs available. Create one to get started.</p>
@@ -77,12 +107,14 @@ const ListCatalog: React.FC<ListCatalogProps> = ({
                     <button
                       className="confirm-yes"
                       onClick={handleConfirmDelete}
+                      disabled={loading}
                     >
-                      ✓
+                      {loading ? "..." : "✓"}
                     </button>
                     <button
                       className="confirm-no"
                       onClick={handleCancelDelete}
+                      disabled={loading}
                     >
                       ✕
                     </button>
