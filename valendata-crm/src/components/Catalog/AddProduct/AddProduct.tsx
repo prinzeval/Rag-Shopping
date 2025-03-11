@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import './addproduct.css';
 
 interface AddProductProps {
   catalogId: string;

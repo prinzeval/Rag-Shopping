@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import CreateCatalog from './CreateCatalog';
-import AddProduct from './AddProduct';
-import ListCatalog from './ListCatalog';
-import UpdateCatalog from './UpdateCatalog';
-import ListCartProducts from './ListCartProducts'; // Updated import
+import CreateCatalog from './CreateCatalog/CreateCatalog';
+import AddProduct from './AddProduct/AddProduct';
+import ListCatalog from './ListCatalog/ListCatalog';
+import UpdateCatalog from './UpdateCatalog/UpdateCatalog'; // Updated import
+import ListCartProducts from './ListCartProducts/ListCartProducts'; // Updated import
 import './catalog.css';
 
 const Catalog: React.FC = () => {

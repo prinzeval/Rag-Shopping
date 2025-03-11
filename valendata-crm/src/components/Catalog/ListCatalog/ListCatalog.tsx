@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import './listcatalog.css';
+
 
 interface ListCatalogProps {
   catalogs: any[];

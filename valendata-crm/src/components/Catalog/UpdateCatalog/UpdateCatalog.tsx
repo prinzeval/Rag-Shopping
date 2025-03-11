@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
-import './catalog.css';
+import './updatecatalog.css';
 
-interface CreateCatalogProps {
-  onCatalogCreated: () => void;
+interface UpdateCatalogProps {
+  catalog: any;
+  onCatalogUpdated: () => void;
 }
 
-const CreateCatalog: React.FC<CreateCatalogProps> = ({ onCatalogCreated }) => {
-  const [name, setName] = useState<string>('');
-  const [description, setDescription] = useState<string>('');
-  const [vertical, setVertical] = useState<string>('commerce');
+const UpdateCatalog: React.FC<UpdateCatalogProps> = ({ catalog, onCatalogUpdated }) => {
+  // Add API base URL constant
+  const API_BASE_URL = 'http://localhost:8000/api';
+  
+  const [name, setName] = useState<string>(catalog.name || '');
+  const [description, setDescription] = useState<string>(catalog.description || '');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [responseDetails, setResponseDetails] = useState<any>(null);
-
-  // API base URL - must match your FastAPI server
-  const API_BASE_URL = 'http://localhost:8000/api';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,9 +23,9 @@ const CreateCatalog: React.FC<CreateCatalogProps> = ({ onCatalogCreated }) => {
     setResponseDetails(null);
     
     try {
-      const url = `${API_BASE_URL}/catalogs`;
-      console.log(`Creating catalog at: ${url}`);
-
+      const url = `${API_BASE_URL}/catalogs/${catalog.id}`;
+      console.log(`Updating catalog at: ${url}`);
+      
       const response = await fetch(url, {
         method: 'POST',
         headers: { 
@@ -35,8 +35,7 @@ const CreateCatalog: React.FC<CreateCatalogProps> = ({ onCatalogCreated }) => {
         credentials: 'include',
         body: JSON.stringify({
           name,
-          description,
-          vertical,
+          description
         }),
       });
       
@@ -62,8 +61,8 @@ const CreateCatalog: React.FC<CreateCatalogProps> = ({ onCatalogCreated }) => {
       if (responseText.trim()) {
         try {
           const data = JSON.parse(responseText);
-          console.log('Catalog created:', data);
-          onCatalogCreated();
+          console.log('Catalog updated:', data);
+          onCatalogUpdated();
         } catch (parseError) {
           console.error('JSON parsing error:', parseError);
           console.error('Response text that failed to parse:', responseText);
@@ -71,10 +70,10 @@ const CreateCatalog: React.FC<CreateCatalogProps> = ({ onCatalogCreated }) => {
         }
       } else {
         console.warn("Empty response received");
-        onCatalogCreated(); // Assuming success if we got 200 OK
+        onCatalogUpdated(); // Assuming success if we got 200 OK
       }
     } catch (error) {
-      console.error('Error creating catalog:', error);
+      console.error('Error updating catalog:', error);
       setError(error instanceof Error ? error.message : 'An unexpected error occurred');
     } finally {
       setLoading(false);
@@ -82,8 +81,8 @@ const CreateCatalog: React.FC<CreateCatalogProps> = ({ onCatalogCreated }) => {
   };
 
   return (
-    <div className="create-catalog-form">
-      <h3>Create New Catalog</h3>
+    <div className="update-catalog-form">
+      <h3>Update Catalog</h3>
       {error && (
         <div className="error-container">
           <div className="error-message">{error}</div>
@@ -96,6 +95,10 @@ const CreateCatalog: React.FC<CreateCatalogProps> = ({ onCatalogCreated }) => {
         </div>
       )}
       <form onSubmit={handleSubmit}>
+        <div className="catalog-info">
+          <span className="catalog-id">Catalog ID: {catalog.id}</span>
+        </div>
+        
         <div className="form-group">
           <label>Catalog Name</label>
           <input
@@ -107,6 +110,7 @@ const CreateCatalog: React.FC<CreateCatalogProps> = ({ onCatalogCreated }) => {
             disabled={loading}
           />
         </div>
+        
         <div className="form-group">
           <label>Description</label>
           <textarea
@@ -116,29 +120,17 @@ const CreateCatalog: React.FC<CreateCatalogProps> = ({ onCatalogCreated }) => {
             disabled={loading}
           />
         </div>
-        <div className="form-group">
-          <label>Vertical</label>
-          <select
-            value={vertical}
-            onChange={(e) => setVertical(e.target.value)}
-            disabled={loading}
-          >
-            <option value="commerce">Commerce</option>
-            <option value="services">Services</option>
-            <option value="travel">Travel</option>
-            <option value="restaurants">Restaurants</option>
-          </select>
-        </div>
+        
         <button
           type="submit"
           className="form-button"
           disabled={loading}
         >
-          {loading ? 'Creating...' : 'Create Catalog'}
+          {loading ? 'Updating...' : 'Update Catalog'}
         </button>
       </form>
     </div>
   );
 };
 
-export default CreateCatalog;
+export default UpdateCatalog;
