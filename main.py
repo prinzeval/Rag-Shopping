@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 import os
 import json
@@ -8,7 +8,8 @@ from datetime import datetime
 from typing import List, Dict
 import requests
 from fastapi.middleware.cors import CORSMiddleware
-
+from typing import Optional
+import uuid
 # Load environment variables
 load_dotenv()
 
@@ -26,7 +27,7 @@ app.add_middleware(
 
 # WhatsApp Business API credentials
 PHONE_NUMBER_ID = "594079853780037"
-WA_ACCESS_TOKEN = "EAAk2WSNlS4oBOxIT1OP5HXq80X9Co6rmInl3sbivq8fUHuFOq9Lc2tzemxzF5Bq0ev8kfItnt4wzhwmOk2ZBvD1M0iwWAh5TADqso5VEx5DmkVmOkZBlejnrfNmUqS6DXLomQZB7mySMtfOwsIxoZCwVd1TaP4txVNT0NgS7loZCr6M7E1AZCGZCpXQdFSyp6MeQMyEe3SLRIAX2gTPQka7fdawLm19yuvTCUZCWFxLmK4PbqH2eT5gK"
+WA_ACCESS_TOKEN = "EAAk2WSNlS4oBOyN2GKlcQzreAZA99qVwKIOsa81N1kgiKcjEzRAHAT3vQKZB9TGd10ODaNIy6IKrXJQvQBAWba24Ni81FLS2ydoiv3QJCsGvZBAYgfAw6XBFICEvtaZCeZAq2XeTwSJWmKZAl7oF5gVzxtWF3LCSLlTMxZAKtJu4lRlZCz8GdfQkN9jqZBZAZCuNASFqdbg1sqnd2bJZBASbT3T4eDkVrEEUCBL5akC66Ea4ikZAcZC33KZBT8ZD"
 BUSINESS_ID = "1887710258302426"
 FB_BASE_URL = "https://graph.facebook.com/v19.0"
 
@@ -75,16 +76,16 @@ class CatalogCreate(BaseModel):
     vertical: str = "commerce"
 
 class ProductCreate(BaseModel):
-    retailer_id: str
     name: str
-    description: str
-    price: str  # Format should be like "19 USD"
-    availability: str = "in stock"
-    condition: str = "new"
-    link: str
     image_url: str
-    brand: str
-    google_product_category: str
+    retailer_id: Optional[str] = None
+    description: Optional[str] = None
+    availability: Optional[str] = Field(default="in stock")
+    condition: Optional[str] = Field(default="new")
+    price: Optional[str] = None
+    link: Optional[str] = None
+    brand: Optional[str] = None
+    google_product_category: Optional[str] = None
 
 # API endpoints for catalog management
 @app.post("/api/catalogs")
@@ -145,25 +146,6 @@ async def delete_catalog(catalog_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
-from typing import Optional
-import uuid
-
-app = FastAPI()
-
-class ProductCreate(BaseModel):
-    name: str
-    image_url: str
-    retailer_id: Optional[str] = None
-    description: Optional[str] = None
-    availability: Optional[str] = Field(default="in stock")
-    condition: Optional[str] = Field(default="new")
-    price: Optional[str] = None
-    link: Optional[str] = None
-    brand: Optional[str] = None
-    google_product_category: Optional[str] = None
-
 @app.post("/api/catalogs/{catalog_id}/products")
 async def add_product(catalog_id: str, product: ProductCreate):
     try:
@@ -197,11 +179,12 @@ async def add_product(catalog_id: str, product: ProductCreate):
         else:
             product_data["price"] = "0"
             product_data["currency"] = "USD"
+        
         response = make_fb_api_request('POST', endpoint, product_data)
+        
         return {"status": "Product added", "product_id": response.get("id"), "details": response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
 
 @app.get("/api/catalogs/{catalog_id}/products")
 async def list_products(catalog_id: str):

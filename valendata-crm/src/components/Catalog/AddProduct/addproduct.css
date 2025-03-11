@@ -40,6 +40,11 @@
     font-size: 14px;
 }
 
+.form-group label .required {
+    color: var(--primary);
+    margin-left: 4px;
+}
+
 .form-group input,
 .form-group textarea {
     width: 100%;
@@ -84,4 +89,76 @@
 
 .form-button:hover {
     box-shadow: 0 6px 16px rgba(12, 223, 255, 0.4);
+}
+
+/* New styles for the simplified form */
+.toggle-fields-button {
+    padding: 8px 16px;
+    background-color: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition-normal);
+    display: block;
+    width: 100%;
+    margin: 10px 0 20px;
+    text-align: center;
+}
+
+.toggle-fields-button:hover {
+    background-color: rgba(12, 223, 255, 0.1);
+}
+
+.error-container {
+    margin-bottom: 20px;
+    padding: 12px;
+    border-radius: 8px;
+    background-color: rgba(255, 87, 87, 0.1);
+    border: 1px solid rgba(255, 87, 87, 0.3);
+}
+
+.error-message {
+    color: #ff5757;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+.error-details {
+    font-size: 12px;
+    color: var(--gray-3);
+    overflow-x: auto;
+}
+
+.error-details h4 {
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: var(--gray-2);
+}
+
+.error-details pre {
+    padding: 8px;
+    background-color: var(--dark-3);
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+.form-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.form-group.half {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.optional-fields {
+    border-top: 1px solid rgba(12, 223, 255, 0.1);
+    padding-top: 20px;
+    margin-top: 10px;
 }
