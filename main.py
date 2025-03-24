@@ -27,7 +27,7 @@ app.add_middleware(
 
 # WhatsApp Business API credentials
 PHONE_NUMBER_ID = "594079853780037"
-WA_ACCESS_TOKEN = "EAAk2WSNlS4oBOyN2GKlcQzreAZA99qVwKIOsa81N1kgiKcjEzRAHAT3vQKZB9TGd10ODaNIy6IKrXJQvQBAWba24Ni81FLS2ydoiv3QJCsGvZBAYgfAw6XBFICEvtaZCeZAq2XeTwSJWmKZAl7oF5gVzxtWF3LCSLlTMxZAKtJu4lRlZCz8GdfQkN9jqZBZAZCuNASFqdbg1sqnd2bJZBASbT3T4eDkVrEEUCBL5akC66Ea4ikZAcZC33KZBT8ZD"
+WA_ACCESS_TOKEN = "EAAk2WSNlS4oBO0nGy5XZBw59tQBlb4OjZCZADMZA3ZCzXVss3E3dibnZBNVcEDSKyiOsZA3CMQO3zbWswZCtyaoHNDZCroqZAYTaQwnwbGNfTAcJw4drnzMVbiSpIj12m5eK4ZBgtY9VtSb2puVd1tnTzNGHq7EZBJ3GmRZBGZB2wxAerhWKLNJdgEqB35n1cZAFBlmw1zZA39n8hhvIhth6fLuX3VC1wXUslOBEezMqGRaEdHQZBDRIOR946ftMZD"
 BUSINESS_ID = "1887710258302426"
 FB_BASE_URL = "https://graph.facebook.com/v19.0"
 
@@ -87,6 +87,10 @@ class ProductCreate(BaseModel):
     brand: Optional[str] = None
     google_product_category: Optional[str] = None
 
+
+@app.get("/",)
+async def home():
+    return {"message": "We are live!"}
 # API endpoints for catalog management
 @app.post("/api/catalogs")
 async def create_catalog(catalog: CatalogCreate):
