@@ -8,7 +8,7 @@ unstructured
 openai
 supabase
 langchain-openai
-psycopg2
+psycopg2-binary
 requests
 langchain-core
 langchain-text-splitters
